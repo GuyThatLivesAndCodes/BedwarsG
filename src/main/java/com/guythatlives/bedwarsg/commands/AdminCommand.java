@@ -2,6 +2,7 @@ package com.guythatlives.bedwarsg.commands;
 
 import com.guythatlives.bedwarsg.BedwarsG;
 import com.guythatlives.bedwarsg.arena.Arena;
+import com.guythatlives.bedwarsg.arena.ArenaState;
 import com.guythatlives.bedwarsg.arena.GameMode;
 import com.guythatlives.bedwarsg.map.BedwarsMap;
 import org.bukkit.command.Command;
@@ -48,6 +49,9 @@ public class AdminCommand implements CommandExecutor {
             case "deletemap":
                 handleDeleteMap(player, args);
                 break;
+            case "savemapworld":
+                handleSaveMapWorld(player, args);
+                break;
             case "setspawn":
                 handleSetSpawn(player, args);
                 break;
@@ -68,6 +72,16 @@ public class AdminCommand implements CommandExecutor {
                 break;
             case "list":
                 handleList(player);
+                break;
+            case "games":
+                handleGames(player);
+                break;
+            case "teleport":
+            case "tp":
+                handleTeleport(player, args);
+                break;
+            case "forceend":
+                handleForceEnd(player, args);
                 break;
             default:
                 sendHelp(player);
@@ -255,16 +269,124 @@ public class AdminCommand implements CommandExecutor {
         }
     }
 
+    private void handleSaveMapWorld(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin savemapworld <mapname>");
+            return;
+        }
+
+        String mapName = args[1];
+        String worldName = player.getWorld().getName();
+
+        boolean success = plugin.getWorldManager().saveMapWorld(mapName, worldName);
+        if (success) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§aMap world saved: " + mapName);
+        } else {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cFailed to save map world!");
+        }
+    }
+
+    private void handleGames(Player player) {
+        player.sendMessage("§8§m----------§r §cRunning Games §8§m----------");
+
+        int count = 0;
+        for (Arena arena : plugin.getArenaManager().getArenas()) {
+            if (arena.getState() == ArenaState.RUNNING) {
+                count++;
+                player.sendMessage("§e" + arena.getName() + " §7- §a" + arena.getGameMode().getDisplayName());
+                player.sendMessage("  §7Players: §e" + arena.getPlayers().size());
+                player.sendMessage("  §7World: §e" + arena.getGameWorldName());
+                player.sendMessage("  §7Time: §e" + formatTime(arena.getGameTimer()));
+            }
+        }
+
+        if (count == 0) {
+            player.sendMessage("§7No games currently running");
+        }
+    }
+
+    private void handleTeleport(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin tp <arena>");
+            return;
+        }
+
+        String arenaName = args[1];
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+
+        if (arena == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cArena not found!");
+            return;
+        }
+
+        if (arena.getState() != ArenaState.RUNNING) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cThat arena is not running!");
+            return;
+        }
+
+        String worldName = arena.getGameWorldName();
+        if (worldName == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cGame world not found!");
+            return;
+        }
+
+        org.bukkit.World world = org.bukkit.Bukkit.getWorld(worldName);
+        if (world == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cGame world not loaded!");
+            return;
+        }
+
+        org.bukkit.Location spawnLoc = world.getSpawnLocation();
+        player.teleport(spawnLoc);
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§aTeleported to arena: " + arenaName);
+    }
+
+    private void handleForceEnd(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin forceend <arena>");
+            return;
+        }
+
+        String arenaName = args[1];
+        Arena arena = plugin.getArenaManager().getArena(arenaName);
+
+        if (arena == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cArena not found!");
+            return;
+        }
+
+        if (arena.getState() != ArenaState.RUNNING) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cThat arena is not running!");
+            return;
+        }
+
+        plugin.getGameManager().endGame(arena, null);
+        player.sendMessage(plugin.getConfigManager().getMessage("admin.game-force-stopped"));
+    }
+
+    private String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%d:%02d", minutes, secs);
+    }
+
     private void sendHelp(Player player) {
         player.sendMessage("§8§m----------§r §cBedwarsG Admin §8§m----------");
+        player.sendMessage("§6Map Management:");
         player.sendMessage("§e/bwadmin createmap <name> §7- Create a new map");
         player.sendMessage("§e/bwadmin deletemap <name> §7- Delete a map");
+        player.sendMessage("§e/bwadmin savemapworld <name> §7- Save current world as map");
         player.sendMessage("§e/bwadmin setspawn <map> <team> §7- Set team spawn");
         player.sendMessage("§e/bwadmin setbed <map> <team> §7- Set team bed");
         player.sendMessage("§e/bwadmin addgen <map> <type> §7- Add generator");
         player.sendMessage("§e/bwadmin enable <map> §7- Enable a map");
         player.sendMessage("§e/bwadmin disable <map> §7- Disable a map");
-        player.sendMessage("§e/bwadmin createarena <name> <map> <mode> §7- Create arena");
         player.sendMessage("§e/bwadmin list §7- List all maps");
+        player.sendMessage("");
+        player.sendMessage("§6Arena & Game Management:");
+        player.sendMessage("§e/bwadmin createarena <name> <map> <mode> §7- Create arena");
+        player.sendMessage("§e/bwadmin games §7- View running games");
+        player.sendMessage("§e/bwadmin tp <arena> §7- Teleport to game");
+        player.sendMessage("§e/bwadmin forceend <arena> §7- Force end a game");
     }
 }

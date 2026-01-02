@@ -20,6 +20,7 @@ public class Arena {
 
     private int countdown;
     private int gameTimer;
+    private String gameWorldName;
 
     public Arena(String name, BedwarsMap map, GameMode gameMode, BedwarsG plugin) {
         this.name = name;
@@ -163,5 +164,13 @@ public class Arena {
 
     public void setGameTimer(int gameTimer) {
         this.gameTimer = gameTimer;
+    }
+
+    public String getGameWorldName() {
+        return gameWorldName;
+    }
+
+    public void setGameWorldName(String gameWorldName) {
+        this.gameWorldName = gameWorldName;
     }
 }

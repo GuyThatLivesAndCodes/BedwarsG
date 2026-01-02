@@ -5,6 +5,13 @@ A comprehensive, feature-rich Bedwars plugin for Spigot 1.8.8+ with support for 
 
 ## Features
 
+### Dynamic World Management
+- **Automatic World Copying** - Each game creates a fresh copy of the map
+- **Temporary Game Worlds** - Games run in isolated worlds (e.g., `bedwars-a8f4c2d1`)
+- **Auto-Cleanup** - Worlds are automatically deleted when games end
+- **Graceful Shutdown** - All games end cleanly when server stops
+- **Map Templates** - Save any world as a reusable map template
+
 ### Core Game Modes
 - **Solo** - 8 teams of 1 player each
 - **Doubles** - 8 teams of 2 players each
@@ -71,15 +78,23 @@ A comprehensive, feature-rich Bedwars plugin for Spigot 1.8.8+ with support for 
 - `/bw1v1 <player>` - Challenge a player to 1v1 or accept their challenge
 
 ### Admin Commands
+
+**Map Management:**
 - `/bwadmin createmap <name>` - Create a new map
 - `/bwadmin deletemap <name>` - Delete a map
+- `/bwadmin savemapworld <name>` - Save current world as a map template
 - `/bwadmin setspawn <map> <team>` - Set team spawn point
 - `/bwadmin setbed <map> <team>` - Set team bed location
 - `/bwadmin addgen <map> <type>` - Add a generator (IRON, GOLD, DIAMOND, EMERALD)
 - `/bwadmin enable <map>` - Enable a map
 - `/bwadmin disable <map>` - Disable a map
-- `/bwadmin createarena <name> <map> <mode>` - Create an arena
 - `/bwadmin list` - List all maps
+
+**Arena & Game Management:**
+- `/bwadmin createarena <name> <map> <mode>` - Create an arena
+- `/bwadmin games` - View all running games
+- `/bwadmin tp <arena>` - Teleport to a running game
+- `/bwadmin forceend <arena>` - Force end a running game
 
 ## Permissions
 
@@ -109,6 +124,13 @@ A comprehensive, feature-rich Bedwars plugin for Spigot 1.8.8+ with support for 
 - `bedwarsg.admin.forcestop` - Allows force stopping games (default: op)
 - `bedwarsg.*` - All permissions
 
+## CI/CD
+
+This plugin includes GitHub Actions for automatic building:
+- Builds automatically on every push and pull request
+- Compiled artifacts are available in the Actions tab
+- JAR files are retained for 30 days
+
 ## Setup Guide
 
 ### 1. Installation
@@ -119,12 +141,26 @@ A comprehensive, feature-rich Bedwars plugin for Spigot 1.8.8+ with support for 
 
 ### 2. Creating Your First Map
 
-1. **Create the map**
+#### Method 1: Build in a Separate World (Recommended)
+
+1. **Build your map** in a dedicated world (e.g., `bedwars_builder`)
+   - Create spawn points for each team
+   - Place beds for each team
+   - Add generator locations
+   - Build the actual map terrain and structures
+
+2. **Go to your built world** and run:
+   ```
+   /bwadmin savemapworld <mapname>
+   ```
+   This saves the entire world as a map template in `plugins/BedwarsG/map-worlds/`
+
+3. **Create the map configuration**
    ```
    /bwadmin createmap <mapname>
    ```
 
-2. **Set team spawns** (for each team: RED, BLUE, GREEN, YELLOW, etc.)
+4. **Set team spawns** (stand at each spawn location)
    ```
    /bwadmin setspawn <mapname> RED
    /bwadmin setspawn <mapname> BLUE
@@ -132,7 +168,7 @@ A comprehensive, feature-rich Bedwars plugin for Spigot 1.8.8+ with support for 
    /bwadmin setspawn <mapname> YELLOW
    ```
 
-3. **Set team beds**
+5. **Set team beds** (stand at each bed location)
    ```
    /bwadmin setbed <mapname> RED
    /bwadmin setbed <mapname> BLUE
@@ -140,21 +176,34 @@ A comprehensive, feature-rich Bedwars plugin for Spigot 1.8.8+ with support for 
    /bwadmin setbed <mapname> YELLOW
    ```
 
-4. **Add generators**
+6. **Add generators** (stand at generator locations)
    ```
    /bwadmin addgen <mapname> DIAMOND
    /bwadmin addgen <mapname> EMERALD
    ```
 
-5. **Enable the map**
+7. **Enable the map**
    ```
    /bwadmin enable <mapname>
    ```
 
-6. **Create an arena**
+8. **Create an arena**
    ```
    /bwadmin createarena <arenaname> <mapname> solo
    ```
+
+#### Method 2: Quick Setup
+
+Follow steps 1-6 from above without saving the world. The plugin will use location data but won't copy the world.
+
+### How Games Work
+
+When a game starts:
+1. The plugin creates a **temporary copy** of the map world (e.g., `bedwars-a8f4c2d1`)
+2. Players are teleported to this temporary world
+3. All game actions happen in this isolated world
+4. When the game ends, the temporary world is **automatically deleted**
+5. The original map template remains untouched for the next game
 
 ### 3. Configuration
 

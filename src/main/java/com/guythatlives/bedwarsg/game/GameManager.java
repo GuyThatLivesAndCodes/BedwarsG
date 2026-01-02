@@ -69,22 +69,44 @@ public class GameManager {
     }
 
     private void beginGame(Arena arena) {
+        // Create temporary game world
+        String worldName = plugin.getWorldManager().createGameWorld(arena.getMap().getName());
+        if (worldName == null) {
+            plugin.getLogger().severe("Failed to create game world for arena: " + arena.getName());
+            for (Player player : arena.getPlayers()) {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§cFailed to start game! Contact an administrator.");
+            }
+            resetArena(arena);
+            return;
+        }
+
+        arena.setGameWorldName(worldName);
         arena.setState(ArenaState.RUNNING);
 
         Game game = createGame(arena);
         game.start();
 
         String message = plugin.getConfigManager().getMessage("game.started");
+        org.bukkit.World gameWorld = Bukkit.getWorld(worldName);
+
         for (Player player : arena.getPlayers()) {
             player.sendMessage(message);
             player.setGameMode(BukkitGameMode.SURVIVAL);
 
-            // Teleport to team spawn
+            // Teleport to team spawn in game world
             BedwarsTeam team = arena.getPlayerTeam(player);
-            if (team != null) {
-                org.bukkit.Location spawn = arena.getMap().getSpawn(team.getColor());
-                if (spawn != null) {
-                    player.teleport(spawn);
+            if (team != null && gameWorld != null) {
+                org.bukkit.Location originalSpawn = arena.getMap().getSpawn(team.getColor());
+                if (originalSpawn != null) {
+                    org.bukkit.Location gameSpawn = new org.bukkit.Location(
+                        gameWorld,
+                        originalSpawn.getX(),
+                        originalSpawn.getY(),
+                        originalSpawn.getZ(),
+                        originalSpawn.getYaw(),
+                        originalSpawn.getPitch()
+                    );
+                    player.teleport(gameSpawn);
                 }
             }
         }
@@ -137,6 +159,13 @@ public class GameManager {
                 player.teleport(lobbySpawn);
             }
             player.setGameMode(BukkitGameMode.ADVENTURE);
+        }
+
+        // Delete game world
+        String worldName = arena.getGameWorldName();
+        if (worldName != null) {
+            plugin.getWorldManager().deleteGameWorld(worldName);
+            arena.setGameWorldName(null);
         }
 
         arena.setState(ArenaState.WAITING);

@@ -8,6 +8,7 @@ import com.guythatlives.bedwarsg.map.MapManager;
 import com.guythatlives.bedwarsg.party.PartyManager;
 import com.guythatlives.bedwarsg.shop.ShopManager;
 import com.guythatlives.bedwarsg.stats.StatsManager;
+import com.guythatlives.bedwarsg.world.WorldManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BedwarsG extends JavaPlugin {
@@ -21,6 +22,7 @@ public class BedwarsG extends JavaPlugin {
     private ShopManager shopManager;
     private StatsManager statsManager;
     private ConfigManager configManager;
+    private WorldManager worldManager;
 
     @Override
     public void onEnable() {
@@ -33,6 +35,7 @@ public class BedwarsG extends JavaPlugin {
         configManager.loadConfigs();
 
         // Initialize managers
+        worldManager = new WorldManager(this);
         mapManager = new MapManager(this);
         arenaManager = new ArenaManager(this);
         partyManager = new PartyManager(this);
@@ -51,17 +54,25 @@ public class BedwarsG extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        getLogger().info("Shutting down BedwarsG...");
+
+        // End all games gracefully
+        if (gameManager != null) {
+            gameManager.endAllGames();
+        }
+
         // Save all data
         if (statsManager != null) {
             statsManager.saveAll();
         }
 
-        if (gameManager != null) {
-            gameManager.endAllGames();
-        }
-
         if (mapManager != null) {
             mapManager.saveAll();
+        }
+
+        // Clean up all game worlds
+        if (worldManager != null) {
+            worldManager.deleteAllGameWorlds();
         }
 
         getLogger().info("BedwarsG has been disabled!");
@@ -118,5 +129,9 @@ public class BedwarsG extends JavaPlugin {
 
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public WorldManager getWorldManager() {
+        return worldManager;
     }
 }
