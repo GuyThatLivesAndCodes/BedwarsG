@@ -6,6 +6,7 @@ import com.guythatlives.bedwarsg.arena.BedwarsTeam;
 import org.bukkit.*;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
