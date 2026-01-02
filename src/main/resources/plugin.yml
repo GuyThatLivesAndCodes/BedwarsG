@@ -1,0 +1,108 @@
+name: BedwarsG
+version: '${project.version}'
+main: com.guythatlives.bedwarsg.BedwarsG
+api-version: 1.8
+author: GuyThatLives
+description: Advanced Bedwars Plugin with Maps, Parties, 1v1, and Custom Games
+
+commands:
+  bedwars:
+    description: Main Bedwars command
+    aliases: [bw]
+    usage: /<command> [join|leave|list]
+  bparty:
+    description: Bedwars party commands
+    aliases: [bp]
+    usage: /<command> [create|invite|join|leave|kick|list]
+  bwadmin:
+    description: Bedwars admin commands
+    usage: /<command> [setup|delete|setlobby|addspawn|setbed|setgen]
+    permission: bedwarsg.admin
+  bw1v1:
+    description: Challenge players to 1v1 Bedwars
+    usage: /<command> <player>
+  bwstats:
+    description: View Bedwars statistics
+    usage: /<command> [player]
+
+permissions:
+  bedwarsg.*:
+    description: Gives access to all BedwarsG features
+    children:
+      bedwarsg.admin: true
+      bedwarsg.play: true
+      bedwarsg.party: true
+      bedwarsg.stats: true
+
+  bedwarsg.admin:
+    description: Allows usage of admin commands
+    default: op
+    children:
+      bedwarsg.admin.setup: true
+      bedwarsg.admin.delete: true
+      bedwarsg.admin.forcestart: true
+      bedwarsg.admin.forcestop: true
+
+  bedwarsg.admin.setup:
+    description: Allows setting up arenas
+    default: op
+
+  bedwarsg.admin.delete:
+    description: Allows deleting arenas
+    default: op
+
+  bedwarsg.admin.forcestart:
+    description: Allows force starting games
+    default: op
+
+  bedwarsg.admin.forcestop:
+    description: Allows force stopping games
+    default: op
+
+  bedwarsg.play:
+    description: Allows playing Bedwars
+    default: true
+
+  bedwarsg.play.solo:
+    description: Allows playing solo mode
+    default: true
+
+  bedwarsg.play.doubles:
+    description: Allows playing doubles mode
+    default: true
+
+  bedwarsg.play.3v3v3v3:
+    description: Allows playing 3v3v3v3 mode
+    default: true
+
+  bedwarsg.play.4v4v4v4:
+    description: Allows playing 4v4v4v4 mode
+    default: true
+
+  bedwarsg.play.1v1:
+    description: Allows playing 1v1 mode
+    default: true
+
+  bedwarsg.play.custom:
+    description: Allows creating custom games
+    default: op
+
+  bedwarsg.party:
+    description: Allows using party features
+    default: true
+
+  bedwarsg.party.create:
+    description: Allows creating parties
+    default: true
+
+  bedwarsg.party.invite:
+    description: Allows inviting to parties
+    default: true
+
+  bedwarsg.stats:
+    description: Allows viewing statistics
+    default: true
+
+  bedwarsg.stats.others:
+    description: Allows viewing other players' statistics
+    default: true

@@ -1,0 +1,169 @@
+package com.guythatlives.bedwarsg.game;
+
+import com.guythatlives.bedwarsg.BedwarsG;
+import com.guythatlives.bedwarsg.arena.Arena;
+import com.guythatlives.bedwarsg.arena.ArenaState;
+import com.guythatlives.bedwarsg.arena.BedwarsTeam;
+import com.guythatlives.bedwarsg.arena.GameMode;
+import com.guythatlives.bedwarsg.map.BedwarsMap;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode as BukkitGameMode;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.util.*;
+
+public class GameManager {
+
+    private final BedwarsG plugin;
+    private Map<String, Game> activeGames;
+
+    public GameManager(BedwarsG plugin) {
+        this.plugin = plugin;
+        this.activeGames = new HashMap<>();
+    }
+
+    public Game createGame(Arena arena) {
+        Game game = new Game(arena, plugin);
+        activeGames.put(arena.getName(), game);
+        return game;
+    }
+
+    public void startGame(Arena arena) {
+        if (arena.getState() != ArenaState.WAITING) {
+            return;
+        }
+
+        arena.setState(ArenaState.STARTING);
+        int countdownTime = plugin.getConfigManager().getInt("settings.countdown-time");
+        arena.setCountdown(countdownTime);
+
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (arena.getState() != ArenaState.STARTING) {
+                    cancel();
+                    return;
+                }
+
+                int countdown = arena.getCountdown();
+                if (countdown <= 0) {
+                    beginGame(arena);
+                    cancel();
+                    return;
+                }
+
+                if (countdown <= 10 || countdown % 10 == 0) {
+                    Map<String, String> placeholders = new HashMap<>();
+                    placeholders.put("time", String.valueOf(countdown));
+                    String message = plugin.getConfigManager().getMessage("game.countdown", placeholders);
+
+                    for (Player player : arena.getPlayers()) {
+                        player.sendMessage(message);
+                    }
+                }
+
+                arena.setCountdown(countdown - 1);
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    private void beginGame(Arena arena) {
+        arena.setState(ArenaState.RUNNING);
+
+        Game game = createGame(arena);
+        game.start();
+
+        String message = plugin.getConfigManager().getMessage("game.started");
+        for (Player player : arena.getPlayers()) {
+            player.sendMessage(message);
+            player.setGameMode(BukkitGameMode.SURVIVAL);
+
+            // Teleport to team spawn
+            BedwarsTeam team = arena.getPlayerTeam(player);
+            if (team != null) {
+                org.bukkit.Location spawn = arena.getMap().getSpawn(team.getColor());
+                if (spawn != null) {
+                    player.teleport(spawn);
+                }
+            }
+        }
+    }
+
+    public void endGame(Arena arena, BedwarsTeam winner) {
+        Game game = activeGames.get(arena.getName());
+        if (game != null) {
+            game.end(winner);
+            activeGames.remove(arena.getName());
+        }
+
+        arena.setState(ArenaState.ENDING);
+
+        String message;
+        if (winner != null) {
+            Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("team", winner.getDisplayName());
+            message = plugin.getConfigManager().getMessage("game.victory", placeholders);
+        } else {
+            message = plugin.getConfigManager().getMessage("game.ended");
+        }
+
+        for (Player player : arena.getPlayers()) {
+            player.sendMessage(message);
+        }
+
+        // Schedule arena reset
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                resetArena(arena);
+            }
+        }.runTaskLater(plugin, 100L);
+    }
+
+    public void endAllGames() {
+        for (Game game : new ArrayList<>(activeGames.values())) {
+            endGame(game.getArena(), null);
+        }
+    }
+
+    private void resetArena(Arena arena) {
+        // Teleport players back to lobby
+        for (Player player : new ArrayList<>(arena.getPlayers())) {
+            arena.removePlayer(player);
+            // Teleport to lobby spawn
+            org.bukkit.Location lobbySpawn = getLobbySpawn();
+            if (lobbySpawn != null) {
+                player.teleport(lobbySpawn);
+            }
+            player.setGameMode(BukkitGameMode.ADVENTURE);
+        }
+
+        arena.setState(ArenaState.WAITING);
+        arena.setCountdown(0);
+    }
+
+    private org.bukkit.Location getLobbySpawn() {
+        String world = plugin.getConfigManager().getString("settings.lobby-spawn.world");
+        double x = plugin.getConfigManager().getDouble("settings.lobby-spawn.x");
+        double y = plugin.getConfigManager().getDouble("settings.lobby-spawn.y");
+        double z = plugin.getConfigManager().getDouble("settings.lobby-spawn.z");
+        float yaw = (float) plugin.getConfigManager().getDouble("settings.lobby-spawn.yaw");
+        float pitch = (float) plugin.getConfigManager().getDouble("settings.lobby-spawn.pitch");
+
+        org.bukkit.World bukkitWorld = Bukkit.getWorld(world);
+        if (bukkitWorld == null) {
+            return null;
+        }
+
+        return new org.bukkit.Location(bukkitWorld, x, y, z, yaw, pitch);
+    }
+
+    public Game getGame(Arena arena) {
+        return activeGames.get(arena.getName());
+    }
+
+    public Collection<Game> getActiveGames() {
+        return activeGames.values();
+    }
+}
