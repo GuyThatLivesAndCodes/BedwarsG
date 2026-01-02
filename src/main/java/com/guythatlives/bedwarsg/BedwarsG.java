@@ -1,6 +1,8 @@
 package com.guythatlives.bedwarsg;
 
+import com.guythatlives.bedwarsg.arena.Arena;
 import com.guythatlives.bedwarsg.arena.ArenaManager;
+import com.guythatlives.bedwarsg.bot.BotManager;
 import com.guythatlives.bedwarsg.commands.*;
 import com.guythatlives.bedwarsg.game.GameManager;
 import com.guythatlives.bedwarsg.game.GeneratorManager;
@@ -16,6 +18,7 @@ import com.guythatlives.bedwarsg.stats.StatsManager;
 import com.guythatlives.bedwarsg.visual.MapVisualizer;
 import com.guythatlives.bedwarsg.world.WorldManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 public class BedwarsG extends JavaPlugin {
 
@@ -34,6 +37,7 @@ public class BedwarsG extends JavaPlugin {
     private MapVisualizer mapVisualizer;
     private PlayerGUI playerGUI;
     private AdminGUI adminGUI;
+    private BotManager botManager;
 
     @Override
     public void onEnable() {
@@ -58,6 +62,7 @@ public class BedwarsG extends JavaPlugin {
         mapVisualizer = new MapVisualizer(this);
         playerGUI = new PlayerGUI(this);
         adminGUI = new AdminGUI(this);
+        botManager = new BotManager(this);
 
         // Register commands
         registerCommands();
@@ -71,6 +76,18 @@ public class BedwarsG extends JavaPlugin {
         // Start void death checker (checks every 5 ticks = 0.25 seconds)
         new VoidDeathTask(this).runTaskTimer(this, 0L, 5L);
 
+        // Start bot auto-fill checker (checks every 60 ticks = 3 seconds)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (botManager != null && botManager.isEnabled()) {
+                    for (Arena arena : arenaManager.getArenas()) {
+                        botManager.checkAndFillArena(arena);
+                    }
+                }
+            }
+        }.runTaskTimer(this, 60L, 60L);
+
         getLogger().info("BedwarsG has been enabled successfully!");
     }
 
@@ -81,6 +98,11 @@ public class BedwarsG extends JavaPlugin {
         // Stop visualizer
         if (mapVisualizer != null) {
             mapVisualizer.stopVisualization();
+        }
+
+        // Remove all bots
+        if (botManager != null) {
+            botManager.removeAllBots();
         }
 
         // Remove all shop NPCs
@@ -187,5 +209,9 @@ public class BedwarsG extends JavaPlugin {
 
     public ShopNPCManager getShopNPCManager() {
         return shopNPCManager;
+    }
+
+    public BotManager getBotManager() {
+        return botManager;
     }
 }

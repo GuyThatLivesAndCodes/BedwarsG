@@ -129,6 +129,92 @@ stats:
   track-beds-broken: true
   track-final-kills: true
 
+# Bot/AI Settings
+bots:
+  # Enable bot system
+  enabled: true
+
+  # Time to wait before adding bots (seconds)
+  # If a game doesn't fill with real players after this time, bots will be added
+  auto-fill-delay: 60
+
+  # Maximum bots per game
+  max-bots-per-game: 7
+
+  # Bot difficulty (EASY, MEDIUM, HARD, EXPERT)
+  difficulty: MEDIUM
+
+  # Bot update rate (ticks) - higher = less CPU usage but less responsive
+  # Recommended: 10-20 ticks (0.5-1 second)
+  update-rate: 15
+
+  # Behavior settings
+  behavior:
+    # How often bots switch between passive/aggressive (seconds)
+    mode-switch-interval: 120
+
+    # Chance to switch modes (0.0 - 1.0)
+    mode-switch-chance: 0.3
+
+    # Time spent gathering resources before shopping (seconds)
+    gather-duration: 30
+
+    # Reaction time (ticks) - delay before responding to threats
+    reaction-time: 10
+
+    # Combat range (blocks)
+    combat-range: 16
+
+    # Bed break priority (0.0 - 1.0, higher = more likely to rush beds)
+    bed-break-priority: 0.4
+
+  # Bot skill levels per difficulty
+  skills:
+    EASY:
+      accuracy: 0.5
+      block-placing-speed: 0.6
+      pvp-skill: 0.4
+      decision-speed: 0.5
+      teamwork: 0.3
+
+    MEDIUM:
+      accuracy: 0.7
+      block-placing-speed: 0.8
+      pvp-skill: 0.6
+      decision-speed: 0.7
+      teamwork: 0.6
+
+    HARD:
+      accuracy: 0.85
+      block-placing-speed: 0.9
+      pvp-skill: 0.8
+      decision-speed: 0.85
+      teamwork: 0.8
+
+    EXPERT:
+      accuracy: 0.95
+      block-placing-speed: 1.0
+      pvp-skill: 0.95
+      decision-speed: 0.95
+      teamwork: 0.95
+
+  # Bot names
+  names:
+    - "Bot_Alpha"
+    - "Bot_Beta"
+    - "Bot_Gamma"
+    - "Bot_Delta"
+    - "Bot_Epsilon"
+    - "Bot_Zeta"
+    - "Bot_Eta"
+    - "Bot_Theta"
+    - "AI_Player"
+    - "Training_Bot"
+    - "Steve_Bot"
+    - "Alex_Bot"
+    - "Herobrine_Jr"
+    - "Notch_Clone"
+
 # Performance
 performance:
   auto-save-interval: 300
