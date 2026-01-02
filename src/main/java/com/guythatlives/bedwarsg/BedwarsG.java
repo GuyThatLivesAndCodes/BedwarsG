@@ -4,6 +4,7 @@ import com.guythatlives.bedwarsg.arena.ArenaManager;
 import com.guythatlives.bedwarsg.commands.*;
 import com.guythatlives.bedwarsg.game.GameManager;
 import com.guythatlives.bedwarsg.game.GeneratorManager;
+import com.guythatlives.bedwarsg.game.ShopNPCManager;
 import com.guythatlives.bedwarsg.gui.AdminGUI;
 import com.guythatlives.bedwarsg.gui.PlayerGUI;
 import com.guythatlives.bedwarsg.listeners.*;
@@ -22,6 +23,7 @@ public class BedwarsG extends JavaPlugin {
     private ArenaManager arenaManager;
     private GameManager gameManager;
     private GeneratorManager generatorManager;
+    private ShopNPCManager shopNPCManager;
     private MapManager mapManager;
     private PartyManager partyManager;
     private ShopManager shopManager;
@@ -48,6 +50,7 @@ public class BedwarsG extends JavaPlugin {
         arenaManager = new ArenaManager(this);
         partyManager = new PartyManager(this);
         generatorManager = new GeneratorManager(this);
+        shopNPCManager = new ShopNPCManager(this);
         gameManager = new GameManager(this);
         shopManager = new ShopManager(this);
         statsManager = new StatsManager(this);
@@ -74,6 +77,11 @@ public class BedwarsG extends JavaPlugin {
         // Stop visualizer
         if (mapVisualizer != null) {
             mapVisualizer.stopVisualization();
+        }
+
+        // Remove all shop NPCs
+        if (shopNPCManager != null) {
+            shopNPCManager.removeAllShops();
         }
 
         // End all games gracefully
@@ -170,5 +178,9 @@ public class BedwarsG extends JavaPlugin {
 
     public AdminGUI getAdminGUI() {
         return adminGUI;
+    }
+
+    public ShopNPCManager getShopNPCManager() {
+        return shopNPCManager;
     }
 }

@@ -27,6 +27,10 @@ public class BlockPlaceListener implements Listener {
 
         if (arena.getState() != ArenaState.RUNNING) {
             event.setCancelled(true);
+            return;
         }
+
+        // Track player-placed blocks so they can be broken
+        arena.getPlayerPlacedBlocks().add(event.getBlock().getLocation());
     }
 }

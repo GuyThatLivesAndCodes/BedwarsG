@@ -89,11 +89,23 @@ public class PlayerDeathListener implements Listener {
             @Override
             public void run() {
                 if (timeLeft <= 0) {
-                    // Respawn player
-                    org.bukkit.Location spawn = arena.getMap().getSpawn(team.getColor());
-                    if (spawn != null) {
-                        player.spigot().respawn();
-                        player.teleport(spawn);
+                    // Respawn player in game world
+                    org.bukkit.Location originalSpawn = arena.getMap().getSpawn(team.getColor());
+                    if (originalSpawn != null && arena.getGameWorldName() != null) {
+                        org.bukkit.World gameWorld = org.bukkit.Bukkit.getWorld(arena.getGameWorldName());
+                        if (gameWorld != null) {
+                            org.bukkit.Location gameSpawn = new org.bukkit.Location(
+                                gameWorld,
+                                originalSpawn.getX(),
+                                originalSpawn.getY(),
+                                originalSpawn.getZ(),
+                                originalSpawn.getYaw(),
+                                originalSpawn.getPitch()
+                            );
+                            player.spigot().respawn();
+                            player.teleport(gameSpawn);
+                            player.setGameMode(org.bukkit.GameMode.SURVIVAL);
+                        }
                     }
                     cancel();
                     return;
@@ -108,6 +120,21 @@ public class PlayerDeathListener implements Listener {
     }
 
     private void handleElimination(Player player, Arena arena, BedwarsTeam team) {
+        // Set player to spectator mode in the game world
+        player.setGameMode(org.bukkit.GameMode.SPECTATOR);
+        player.setAllowFlight(true);
+        player.setFlying(true);
+
+        // Teleport to center of map if possible
+        if (arena.getGameWorldName() != null) {
+            org.bukkit.World gameWorld = org.bukkit.Bukkit.getWorld(arena.getGameWorldName());
+            if (gameWorld != null) {
+                player.teleport(gameWorld.getSpawnLocation().add(0, 20, 0));
+            }
+        }
+
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§cYou have been eliminated! You are now spectating.");
+
         // Check if team is eliminated
         boolean hasAlivePlayers = false;
         for (java.util.UUID uuid : team.getPlayers()) {

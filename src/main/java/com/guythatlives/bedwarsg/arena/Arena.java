@@ -5,6 +5,7 @@ import com.guythatlives.bedwarsg.map.BedwarsMap;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Arena {
 
@@ -22,6 +23,7 @@ public class Arena {
     private int gameTimer;
     private String gameWorldName;
     private UUID generatorTaskId;
+    private Set<org.bukkit.Location> playerPlacedBlocks;
 
     public Arena(String name, BedwarsMap map, GameMode gameMode, BedwarsG plugin) {
         this.name = name;
@@ -32,6 +34,7 @@ public class Arena {
         this.players = new HashMap<>();
         this.teams = new HashMap<>();
         this.playerTeams = new HashMap<>();
+        this.playerPlacedBlocks = ConcurrentHashMap.newKeySet();
 
         initializeTeams();
     }
@@ -181,5 +184,9 @@ public class Arena {
 
     public void setGeneratorTaskId(UUID generatorTaskId) {
         this.generatorTaskId = generatorTaskId;
+    }
+
+    public Set<org.bukkit.Location> getPlayerPlacedBlocks() {
+        return playerPlacedBlocks;
     }
 }

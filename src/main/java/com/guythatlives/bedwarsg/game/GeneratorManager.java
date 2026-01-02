@@ -35,7 +35,9 @@ public class GeneratorManager {
             @Override
             public void run() {
                 for (Map.Entry<String, Location> entry : arena.getMap().getGenerators().entrySet()) {
-                    String type = entry.getKey().toUpperCase();
+                    String generatorId = entry.getKey();
+                    // Extract type from ID (e.g., "IRON-0" -> "IRON")
+                    String type = generatorId.contains("-") ? generatorId.split("-")[0].toUpperCase() : generatorId.toUpperCase();
                     Location originalLoc = entry.getValue();
 
                     // Convert location to game world

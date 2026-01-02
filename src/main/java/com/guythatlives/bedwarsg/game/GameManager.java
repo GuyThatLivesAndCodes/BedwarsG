@@ -87,9 +87,10 @@ public class GameManager {
         Game game = createGame(arena);
         game.start();
 
-        // Start generators in the game world
+        // Start generators and spawn shops in the game world
         if (gameWorld != null) {
             plugin.getGeneratorManager().startGenerators(arena, gameWorld);
+            plugin.getShopNPCManager().spawnShops(arena, gameWorld);
         }
 
         String message = plugin.getConfigManager().getMessage("game.started");
@@ -155,8 +156,12 @@ public class GameManager {
     }
 
     private void resetArena(Arena arena) {
-        // Stop generators
+        // Stop generators and remove shops
         plugin.getGeneratorManager().stopGenerators(arena);
+        plugin.getShopNPCManager().removeShops(arena);
+
+        // Clear player-placed blocks tracking
+        arena.getPlayerPlacedBlocks().clear();
 
         // Teleport players back to lobby
         for (Player player : new ArrayList<>(arena.getPlayers())) {
