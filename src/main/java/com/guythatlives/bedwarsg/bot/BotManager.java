@@ -138,6 +138,11 @@ public class BotManager {
         }
 
         plugin.getLogger().info("Added " + count + " bots to arena: " + arena.getName());
+
+        // Check if game can start now
+        if (arena.canStart() && arena.getState() == com.guythatlives.bedwarsg.arena.ArenaState.WAITING) {
+            plugin.getGameManager().startGame(arena);
+        }
     }
 
     /**
@@ -220,6 +225,9 @@ public class BotManager {
 
         // Add to active bots
         activeBots.put(bot.getUUID(), bot);
+
+        // Add bot to arena tracking
+        arena.addBot(bot.getUUID(), team);
 
         plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor());
     }
@@ -352,10 +360,14 @@ public class BotManager {
     public void removeBot(UUID botUUID) {
         BotPlayer bot = activeBots.get(botUUID);
         if (bot != null) {
+            // Remove from arena tracking
+            Arena arena = bot.getArena();
+            if (arena != null) {
+                arena.removeBot(botUUID);
+            }
+
             bot.cleanup();
             activeBots.remove(botUUID);
-
-            // TODO: Remove the actual NPC/player entity
 
             plugin.getLogger().info("Removed bot: " + bot.getName());
         }

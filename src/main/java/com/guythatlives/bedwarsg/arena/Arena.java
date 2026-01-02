@@ -18,6 +18,7 @@ public class Arena {
     private Map<UUID, Player> players;
     private Map<String, BedwarsTeam> teams;
     private Map<UUID, BedwarsTeam> playerTeams;
+    private Set<UUID> bots; // Track bot UUIDs
 
     private int countdown;
     private int gameTimer;
@@ -34,6 +35,7 @@ public class Arena {
         this.players = new HashMap<>();
         this.teams = new HashMap<>();
         this.playerTeams = new HashMap<>();
+        this.bots = ConcurrentHashMap.newKeySet();
         this.playerPlacedBlocks = ConcurrentHashMap.newKeySet();
 
         initializeTeams();
@@ -83,11 +85,45 @@ public class Arena {
     }
 
     public boolean canStart() {
-        return players.size() >= map.getMinPlayers();
+        int totalPlayers = players.size() + bots.size();
+        return totalPlayers >= map.getMinPlayers();
     }
 
     public boolean isFull() {
-        return players.size() >= map.getMaxPlayers();
+        int totalPlayers = players.size() + bots.size();
+        return totalPlayers >= map.getMaxPlayers();
+    }
+
+    /**
+     * Add a bot to this arena
+     */
+    public void addBot(UUID botUUID, BedwarsTeam team) {
+        bots.add(botUUID);
+        if (team != null) {
+            playerTeams.put(botUUID, team);
+        }
+    }
+
+    /**
+     * Remove a bot from this arena
+     */
+    public void removeBot(UUID botUUID) {
+        bots.remove(botUUID);
+        playerTeams.remove(botUUID);
+    }
+
+    /**
+     * Get total player count (real players + bots)
+     */
+    public int getTotalPlayerCount() {
+        return players.size() + bots.size();
+    }
+
+    /**
+     * Get bot count
+     */
+    public int getBotCount() {
+        return bots.size();
     }
 
     private int getTeamsCount() {
