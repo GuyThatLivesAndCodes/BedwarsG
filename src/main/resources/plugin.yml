@@ -1,0 +1,7 @@
+name: BedwarsG
+version: '1.0'
+main: net.guythatlives.bedwarsG.BedwarsG
+api-version: '1.21'
+load: STARTUP
+authors: [ GuyThatLives ]
+description: The official BedwarsG plugin by GuyThatLives (any code or references may include nickname "GuyThatCodes")
