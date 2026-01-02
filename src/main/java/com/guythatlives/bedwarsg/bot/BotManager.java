@@ -3,10 +3,10 @@ package com.guythatlives.bedwarsg.bot;
 import com.guythatlives.bedwarsg.BedwarsG;
 import com.guythatlives.bedwarsg.arena.Arena;
 import com.guythatlives.bedwarsg.arena.BedwarsTeam;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.entity.Player;
+import org.bukkit.*;
+import org.bukkit.entity.ArmorStand;
+import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +18,7 @@ public class BotManager {
 
     private final BedwarsG plugin;
     private final Map<UUID, BotPlayer> activeBots;
-    private final Map<UUID, Long> arenaAutoFillTimers; // Arena UUID -> time when waiting started
+    private final Map<String, Long> arenaAutoFillTimers; // Arena name -> time when waiting started
     private final List<String> availableNames;
     private final Random random;
 
@@ -86,7 +86,7 @@ public class BotManager {
 
         // Don't add bots to already running games
         if (arena.getState() != com.guythatlives.bedwarsg.arena.ArenaState.WAITING) {
-            arenaAutoFillTimers.remove(arena.getUniqueId());
+            arenaAutoFillTimers.remove(arena.getName());
             return;
         }
 
@@ -95,20 +95,20 @@ public class BotManager {
         int maxPlayers = arena.getMap().getMaxPlayers();
 
         if (currentPlayers >= maxPlayers) {
-            arenaAutoFillTimers.remove(arena.getUniqueId());
+            arenaAutoFillTimers.remove(arena.getName());
             return;
         }
 
         // Start timer if not started
-        if (!arenaAutoFillTimers.containsKey(arena.getUniqueId())) {
+        if (!arenaAutoFillTimers.containsKey(arena.getName())) {
             if (currentPlayers > 0) { // Only start timer if there's at least one real player
-                arenaAutoFillTimers.put(arena.getUniqueId(), System.currentTimeMillis());
+                arenaAutoFillTimers.put(arena.getName(), System.currentTimeMillis());
             }
             return;
         }
 
         // Check if enough time has passed
-        long waitTime = System.currentTimeMillis() - arenaAutoFillTimers.get(arena.getUniqueId());
+        long waitTime = System.currentTimeMillis() - arenaAutoFillTimers.get(arena.getName());
         if (waitTime < autoFillDelay * 1000L) {
             return;
         }
@@ -118,7 +118,7 @@ public class BotManager {
         addBotsToArena(arena, botsToAdd);
 
         // Remove timer
-        arenaAutoFillTimers.remove(arena.getUniqueId());
+        arenaAutoFillTimers.remove(arena.getName());
     }
 
     /**
@@ -154,20 +154,9 @@ public class BotManager {
     }
 
     /**
-     * Spawn a bot in the arena
-     * Note: This creates a "virtual" bot that participates in the game
+     * Spawn a bot in the arena as an armor stand
      */
     private void spawnBot(BotPlayer bot, Arena arena) {
-        // Initialize the bot
-        bot.initialize();
-
-        // Add to active bots
-        activeBots.put(bot.getUUID(), bot);
-
-        // Create an offline player reference
-        // Note: In a real implementation, you would use Citizens API or spawn an actual NPC
-        // For now, we'll create a virtual bot that the game logic can interact with
-
         // Get spawn location for bot's team
         BedwarsTeam team = assignBotToTeam(arena);
         if (team == null) {
@@ -181,11 +170,134 @@ public class BotManager {
             return;
         }
 
-        // TODO: Spawn actual NPC/player entity here
-        // For now, this is a placeholder - the bot exists in our system but not as a real player entity
-        // You would need to integrate with Citizens API or create a fake player entity
+        // Get the game world
+        World world;
+        if (arena.getGameWorldName() != null) {
+            world = Bukkit.getWorld(arena.getGameWorldName());
+            if (world != null) {
+                // Convert spawn location to game world
+                spawnLoc = new Location(
+                    world,
+                    spawnLoc.getX(),
+                    spawnLoc.getY(),
+                    spawnLoc.getZ(),
+                    spawnLoc.getYaw(),
+                    spawnLoc.getPitch()
+                );
+            }
+        } else {
+            world = spawnLoc.getWorld();
+        }
 
-        plugin.getLogger().info("Bot " + bot.getName() + " assigned to team " + team.getColor());
+        if (world == null) {
+            plugin.getLogger().warning("Could not find world for bot spawn");
+            return;
+        }
+
+        // Spawn armor stand
+        ArmorStand armorStand = (ArmorStand) world.spawnEntity(spawnLoc, EntityType.ARMOR_STAND);
+
+        // Configure armor stand to look like a player
+        armorStand.setCustomName(ChatColor.YELLOW + bot.getName());
+        armorStand.setCustomNameVisible(true);
+        armorStand.setGravity(true);
+        armorStand.setVisible(true);
+        armorStand.setBasePlate(false);
+        armorStand.setArms(true);
+        armorStand.setSmall(false);
+        armorStand.setMarker(false); // Not a marker, can be interacted with
+        armorStand.setInvulnerable(false); // Can be damaged
+
+        // Add equipment to make it look like a player
+        equipBot(armorStand, team);
+
+        // Link armor stand to bot
+        bot.setArmorStand(armorStand);
+
+        // Initialize the bot AI
+        bot.initialize();
+
+        // Add to active bots
+        activeBots.put(bot.getUUID(), bot);
+
+        plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor());
+    }
+
+    /**
+     * Equip bot armor stand with items
+     */
+    private void equipBot(ArmorStand armorStand, BedwarsTeam team) {
+        // Give basic armor based on team color
+        Color armorColor = getArmorColor(team.getColor());
+
+        if (armorColor != null) {
+            // Leather armor in team color
+            ItemStack helmet = new ItemStack(Material.LEATHER_HELMET);
+            org.bukkit.inventory.meta.LeatherArmorMeta helmetMeta =
+                (org.bukkit.inventory.meta.LeatherArmorMeta) helmet.getItemMeta();
+            if (helmetMeta != null) {
+                helmetMeta.setColor(armorColor);
+                helmet.setItemMeta(helmetMeta);
+            }
+
+            ItemStack chestplate = new ItemStack(Material.LEATHER_CHESTPLATE);
+            org.bukkit.inventory.meta.LeatherArmorMeta chestMeta =
+                (org.bukkit.inventory.meta.LeatherArmorMeta) chestplate.getItemMeta();
+            if (chestMeta != null) {
+                chestMeta.setColor(armorColor);
+                chestplate.setItemMeta(chestMeta);
+            }
+
+            ItemStack leggings = new ItemStack(Material.LEATHER_LEGGINGS);
+            org.bukkit.inventory.meta.LeatherArmorMeta legMeta =
+                (org.bukkit.inventory.meta.LeatherArmorMeta) leggings.getItemMeta();
+            if (legMeta != null) {
+                legMeta.setColor(armorColor);
+                leggings.setItemMeta(legMeta);
+            }
+
+            ItemStack boots = new ItemStack(Material.LEATHER_BOOTS);
+            org.bukkit.inventory.meta.LeatherArmorMeta bootMeta =
+                (org.bukkit.inventory.meta.LeatherArmorMeta) boots.getItemMeta();
+            if (bootMeta != null) {
+                bootMeta.setColor(armorColor);
+                boots.setItemMeta(bootMeta);
+            }
+
+            armorStand.getEquipment().setHelmet(helmet);
+            armorStand.getEquipment().setChestplate(chestplate);
+            armorStand.getEquipment().setLeggings(leggings);
+            armorStand.getEquipment().setBoots(boots);
+        }
+
+        // Give a wooden sword in hand
+        armorStand.getEquipment().setItemInMainHand(new ItemStack(Material.WOODEN_SWORD));
+    }
+
+    /**
+     * Get armor color for team
+     */
+    private Color getArmorColor(String teamColor) {
+        switch (teamColor.toUpperCase()) {
+            case "RED":
+                return Color.RED;
+            case "BLUE":
+                return Color.BLUE;
+            case "GREEN":
+                return Color.GREEN;
+            case "YELLOW":
+                return Color.YELLOW;
+            case "AQUA":
+                return Color.AQUA;
+            case "WHITE":
+                return Color.WHITE;
+            case "PINK":
+                return Color.FUCHSIA;
+            case "GRAY":
+                return Color.GRAY;
+            default:
+                return Color.WHITE;
+        }
     }
 
     /**

@@ -40,8 +40,8 @@ public class BotAI {
      * Main update method called every tick
      */
     public void update() {
-        Player player = bot.getPlayer();
-        if (player == null || !player.isOnline()) {
+        Location botLoc = bot.getLocation();
+        if (botLoc == null) {
             return;
         }
 
@@ -52,7 +52,7 @@ public class BotAI {
         }
 
         // Check for threats first
-        if (checkForThreats(player)) {
+        if (checkForThreats(botLoc)) {
             lastActionTime = System.currentTimeMillis();
             return;
         }
@@ -60,13 +60,13 @@ public class BotAI {
         // Execute behavior based on current mode
         switch (bot.getBehaviorMode()) {
             case PASSIVE:
-                executePassiveBehavior(player);
+                executePassiveBehavior(botLoc);
                 break;
             case AGGRESSIVE:
-                executeAggressiveBehavior(player);
+                executeAggressiveBehavior(botLoc);
                 break;
             case DEFENSIVE:
-                executeDefensiveBehavior(player);
+                executeDefensiveBehavior(botLoc);
                 break;
         }
 
@@ -76,16 +76,17 @@ public class BotAI {
     /**
      * Check for nearby threats and respond
      */
-    private boolean checkForThreats(Player player) {
+    private boolean checkForThreats(Location botLoc) {
         double combatRange = plugin.getConfig().getDouble("bots.behavior.combat-range");
 
         // Find nearest enemy
-        Player nearestEnemy = findNearestEnemy(player, combatRange);
+        Player nearestEnemy = findNearestEnemy(botLoc, combatRange);
 
         if (nearestEnemy != null) {
             bot.setInCombat(true);
             bot.setTargetEnemy(nearestEnemy);
-            engageCombat(player, nearestEnemy);
+            // Move towards enemy (armor stands can't fight, but they can follow)
+            moveTowards(botLoc, nearestEnemy.getLocation());
             return true;
         }
 
@@ -97,18 +98,18 @@ public class BotAI {
     /**
      * Passive behavior: gather resources and buy items
      */
-    private void executePassiveBehavior(Player player) {
+    private void executePassiveBehavior(Location botLoc) {
         int gatherDuration = plugin.getConfigManager().getInt("bots.behavior.gather-duration") * 1000;
 
         // Check if we should gather or shop
         if (System.currentTimeMillis() - gatherStartTime < gatherDuration) {
-            gatherResources(player);
+            gatherResources(botLoc);
         } else {
             // Try to shop
-            if (tryShop(player)) {
+            if (tryShop(botLoc)) {
                 gatherStartTime = System.currentTimeMillis(); // Reset gather timer
             } else {
-                gatherResources(player);
+                gatherResources(botLoc);
             }
         }
     }
@@ -116,63 +117,51 @@ public class BotAI {
     /**
      * Aggressive behavior: attack enemies and break beds
      */
-    private void executeAggressiveBehavior(Player player) {
+    private void executeAggressiveBehavior(Location botLoc) {
         double bedBreakPriority = plugin.getConfig().getDouble("bots.behavior.bed-break-priority");
 
         // Decide between attacking players or breaking beds
         if (random.nextDouble() < bedBreakPriority) {
-            targetEnemyBed(player);
+            targetEnemyBed(botLoc);
         } else {
-            huntPlayers(player);
+            huntPlayers(botLoc);
         }
     }
 
     /**
      * Defensive behavior: protect own bed and base
      */
-    private void executeDefensiveBehavior(Player player) {
-        BedwarsTeam team = bot.getArena().getPlayerTeam(player);
-        if (team == null) {
+    private void executeDefensiveBehavior(Location botLoc) {
+        // For armor stand bots, just patrol around spawn
+        Location spawnLoc = findBotSpawnLocation();
+        if (spawnLoc == null) {
+            gatherResources(botLoc);
             return;
         }
 
-        // Get bed location
-        Location bedLoc = bot.getArena().getMap().getBed(team.getColor());
-        if (bedLoc == null) {
-            // No bed to defend, switch to gathering
-            gatherResources(player);
-            return;
-        }
-
-        // Stay near bed
-        if (player.getLocation().distance(bedLoc) > 15) {
-            moveTowards(player, bedLoc);
+        // Stay near spawn
+        if (botLoc.distance(spawnLoc) > 15) {
+            moveTowards(botLoc, spawnLoc);
         } else {
-            // Patrol around bed
-            patrolArea(player, bedLoc, 10);
+            // Patrol around spawn
+            patrolArea(botLoc, spawnLoc, 10);
         }
     }
 
     /**
      * Gather nearby resources
      */
-    private void gatherResources(Player player) {
+    private void gatherResources(Location botLoc) {
         // Find nearest dropped item within range
-        Item nearestItem = findNearestItem(player, 10);
+        Item nearestItem = findNearestItem(botLoc, 10);
 
         if (nearestItem != null) {
-            moveTowards(player, nearestItem.getLocation());
+            moveTowards(botLoc, nearestItem.getLocation());
         } else {
             // Move to nearest generator
-            Location generatorLoc = findNearestGenerator(player);
+            Location generatorLoc = findNearestGenerator();
             if (generatorLoc != null) {
-                moveTowards(player, generatorLoc);
-
-                // Stay at generator for a bit
-                if (player.getLocation().distance(generatorLoc) < 2) {
-                    // Just wait here
-                    return;
-                }
+                moveTowards(botLoc, generatorLoc);
             }
         }
     }
@@ -180,147 +169,62 @@ public class BotAI {
     /**
      * Try to use shop
      */
-    private boolean tryShop(Player player) {
-        BedwarsTeam team = bot.getArena().getPlayerTeam(player);
-        if (team == null) {
-            return false;
-        }
-
+    private boolean tryShop(Location botLoc) {
         // Get shop location
-        Location shopLoc = bot.getArena().getMap().getShop(team.getColor());
+        Location shopLoc = findShopLocation();
         if (shopLoc == null) {
             return false;
         }
 
         // Move to shop if not there
-        if (player.getLocation().distance(shopLoc) > 3) {
-            moveTowards(player, shopLoc);
+        if (botLoc.distance(shopLoc) > 3) {
+            moveTowards(botLoc, shopLoc);
             return false;
         }
 
-        // TODO: Implement actual shop interaction when near shop
-        // For now, just simulate buying items by giving the player items
-        simulateShopPurchase(player);
-
+        // Armor stands can't actually shop, but they can hang around the shop area
         return true;
-    }
-
-    /**
-     * Simulate shop purchase by giving player basic items
-     */
-    private void simulateShopPurchase(Player player) {
-        // Give basic items based on resources
-        int iron = countMaterial(player, Material.IRON_INGOT);
-        int gold = countMaterial(player, Material.GOLD_INGOT);
-
-        // Buy sword if don't have one
-        if (!hasItem(player, Material.IRON_SWORD) && iron >= 10) {
-            player.getInventory().addItem(new ItemStack(Material.IRON_SWORD));
-            removeItems(player, Material.IRON_INGOT, 10);
-        }
-
-        // Buy armor
-        if (!hasItem(player, Material.LEATHER_CHESTPLATE) && iron >= 5) {
-            player.getInventory().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE));
-            removeItems(player, Material.IRON_INGOT, 5);
-        }
-
-        // Buy blocks
-        if (countMaterial(player, Material.WHITE_WOOL) < 16 && iron >= 4) {
-            player.getInventory().addItem(new ItemStack(Material.WHITE_WOOL, 16));
-            removeItems(player, Material.IRON_INGOT, 4);
-        }
     }
 
     /**
      * Move towards enemy bed
      */
-    private void targetEnemyBed(Player player) {
-        BedwarsTeam ownTeam = bot.getArena().getPlayerTeam(player);
-        if (ownTeam == null) {
-            return;
-        }
-
+    private void targetEnemyBed(Location botLoc) {
         // Find nearest enemy bed that's still alive
-        Location nearestBed = null;
-        double nearestDistance = Double.MAX_VALUE;
-
-        for (BedwarsTeam team : bot.getArena().getTeams().values()) {
-            if (team.equals(ownTeam) || !team.isBedAlive()) {
-                continue;
-            }
-
-            Location bedLoc = bot.getArena().getMap().getBed(team.getColor());
-            if (bedLoc != null) {
-                double distance = player.getLocation().distance(bedLoc);
-                if (distance < nearestDistance) {
-                    nearestDistance = distance;
-                    nearestBed = bedLoc;
-                }
-            }
-        }
+        Location nearestBed = findNearestEnemyBed();
 
         if (nearestBed != null) {
-            moveTowards(player, nearestBed);
-
-            // Try to break bed if close enough
-            if (player.getLocation().distance(nearestBed) < 3) {
-                // Bot should break the bed block
-                // This will be handled by block break events
-            }
+            moveTowards(botLoc, nearestBed);
         }
     }
 
     /**
      * Hunt for enemy players
      */
-    private void huntPlayers(Player player) {
+    private void huntPlayers(Location botLoc) {
         double combatRange = plugin.getConfig().getDouble("bots.behavior.combat-range") * 2;
-        Player target = findNearestEnemy(player, combatRange);
+        Player target = findNearestEnemy(botLoc, combatRange);
 
         if (target != null) {
-            moveTowards(player, target.getLocation());
-            engageCombat(player, target);
+            moveTowards(botLoc, target.getLocation());
         } else {
             // Wander towards center
             if (bot.getArena().getGameWorldName() != null) {
                 org.bukkit.World world = plugin.getServer().getWorld(bot.getArena().getGameWorldName());
                 if (world != null) {
-                    moveTowards(player, world.getSpawnLocation());
+                    moveTowards(botLoc, world.getSpawnLocation());
                 }
             }
         }
     }
 
     /**
-     * Engage in combat with enemy
-     */
-    private void engageCombat(Player player, Player enemy) {
-        // Face the enemy
-        player.teleport(player.getLocation().setDirection(
-            enemy.getLocation().toVector().subtract(player.getLocation().toVector())
-        ));
-
-        // Attack if in range
-        double distance = player.getLocation().distance(enemy.getLocation());
-        if (distance < 3.5) {
-            // Apply PvP skill to determine if attack hits
-            if (random.nextDouble() < bot.getSkills().getPvpSkill()) {
-                player.attack(enemy);
-            }
-        } else {
-            // Move towards enemy
-            moveTowards(player, enemy.getLocation());
-        }
-    }
-
-    /**
      * Patrol around a location
      */
-    private void patrolArea(Player player, Location center, double radius) {
+    private void patrolArea(Location botLoc, Location center, double radius) {
         // Simple patrol: pick random point in radius
         if (bot.getTargetLocation() == null ||
-            player.getLocation().distance(bot.getTargetLocation()) < 2) {
+            botLoc.distance(bot.getTargetLocation()) < 2) {
 
             double angle = random.nextDouble() * 2 * Math.PI;
             double distance = random.nextDouble() * radius;
@@ -334,51 +238,39 @@ public class BotAI {
             bot.setTargetLocation(target);
         }
 
-        moveTowards(player, bot.getTargetLocation());
+        moveTowards(botLoc, bot.getTargetLocation());
     }
 
     /**
-     * Move player towards target location
+     * Move bot towards target location
      */
-    private void moveTowards(Player player, Location target) {
-        if (target == null) {
+    private void moveTowards(Location from, Location target) {
+        if (target == null || from == null) {
             return;
         }
 
-        // Simple movement: set velocity towards target
-        Vector direction = target.toVector().subtract(player.getLocation().toVector()).normalize();
+        // Calculate direction
+        Vector direction = target.toVector().subtract(from.toVector());
+        direction.setY(0); // Keep on same Y level
+        direction.normalize();
 
-        // Apply decision speed to movement
-        double speed = 0.2 * bot.getSkills().getDecisionSpeed();
-        player.setVelocity(direction.multiply(speed));
+        // Apply decision speed to movement distance
+        double speed = 0.5 * bot.getSkills().getDecisionSpeed();
+        Location newLoc = from.clone().add(direction.multiply(speed));
 
-        // Face the direction
-        player.teleport(player.getLocation().setDirection(direction));
+        // Teleport the bot
+        bot.teleport(newLoc);
     }
 
     /**
      * Find nearest enemy player
      */
-    private Player findNearestEnemy(Player player, double maxRange) {
-        BedwarsTeam ownTeam = bot.getArena().getPlayerTeam(player);
-        if (ownTeam == null) {
-            return null;
-        }
-
+    private Player findNearestEnemy(Location botLoc, double maxRange) {
         Player nearest = null;
         double nearestDistance = maxRange;
 
         for (Player p : bot.getArena().getPlayers()) {
-            if (p.equals(player)) {
-                continue;
-            }
-
-            BedwarsTeam team = bot.getArena().getPlayerTeam(p);
-            if (team != null && team.equals(ownTeam)) {
-                continue; // Same team
-            }
-
-            double distance = player.getLocation().distance(p.getLocation());
+            double distance = botLoc.distance(p.getLocation());
             if (distance < nearestDistance) {
                 nearestDistance = distance;
                 nearest = p;
@@ -391,14 +283,18 @@ public class BotAI {
     /**
      * Find nearest dropped item
      */
-    private Item findNearestItem(Player player, double maxRange) {
+    private Item findNearestItem(Location botLoc, double maxRange) {
+        if (botLoc.getWorld() == null) {
+            return null;
+        }
+
         Item nearest = null;
         double nearestDistance = maxRange;
 
-        for (Entity entity : player.getNearbyEntities(maxRange, maxRange, maxRange)) {
+        for (Entity entity : botLoc.getWorld().getNearbyEntities(botLoc, maxRange, maxRange, maxRange)) {
             if (entity instanceof Item) {
                 Item item = (Item) entity;
-                double distance = player.getLocation().distance(item.getLocation());
+                double distance = botLoc.distance(item.getLocation());
                 if (distance < nearestDistance) {
                     nearestDistance = distance;
                     nearest = item;
@@ -412,9 +308,13 @@ public class BotAI {
     /**
      * Find nearest generator location
      */
-    private Location findNearestGenerator(Player player) {
-        BedwarsTeam team = bot.getArena().getPlayerTeam(player);
-        if (team == null || bot.getArena().getMap() == null) {
+    private Location findNearestGenerator() {
+        if (bot.getArena().getMap() == null) {
+            return null;
+        }
+
+        Location botLoc = bot.getLocation();
+        if (botLoc == null) {
             return null;
         }
 
@@ -422,7 +322,7 @@ public class BotAI {
         double nearestDistance = Double.MAX_VALUE;
 
         for (Location genLoc : bot.getArena().getMap().getGenerators().values()) {
-            double distance = player.getLocation().distance(genLoc);
+            double distance = botLoc.distance(genLoc);
             if (distance < nearestDistance) {
                 nearestDistance = distance;
                 nearest = genLoc;
@@ -432,35 +332,68 @@ public class BotAI {
         return nearest;
     }
 
-    // Helper methods
-
-    private int countMaterial(Player player, Material material) {
-        int count = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
-                count += item.getAmount();
-            }
+    /**
+     * Find shop location
+     */
+    private Location findShopLocation() {
+        if (bot.getArena().getMap() == null) {
+            return null;
         }
-        return count;
+
+        // Get first shop location (simplified)
+        for (Location loc : bot.getArena().getMap().getShops().values()) {
+            return loc;
+        }
+        return null;
     }
 
-    private boolean hasItem(Player player, Material material) {
-        return player.getInventory().contains(material);
+    /**
+     * Find bot's spawn location
+     */
+    private Location findBotSpawnLocation() {
+        if (bot.getArena().getMap() == null) {
+            return null;
+        }
+
+        // Get first spawn location (simplified)
+        for (Location loc : bot.getArena().getMap().getSpawns().values()) {
+            return loc;
+        }
+        return null;
     }
 
-    private void removeItems(Player player, Material material, int amount) {
-        int remaining = amount;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
-                if (item.getAmount() >= remaining) {
-                    item.setAmount(item.getAmount() - remaining);
-                    return;
-                } else {
-                    remaining -= item.getAmount();
-                    item.setAmount(0);
+    /**
+     * Find nearest enemy bed
+     */
+    private Location findNearestEnemyBed() {
+        if (bot.getArena().getMap() == null) {
+            return null;
+        }
+
+        Location botLoc = bot.getLocation();
+        if (botLoc == null) {
+            return null;
+        }
+
+        Location nearest = null;
+        double nearestDistance = Double.MAX_VALUE;
+
+        for (BedwarsTeam team : bot.getArena().getTeams().values()) {
+            if (!team.isBedAlive()) {
+                continue;
+            }
+
+            Location bedLoc = bot.getArena().getMap().getBed(team.getColor());
+            if (bedLoc != null) {
+                double distance = botLoc.distance(bedLoc);
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearest = bedLoc;
                 }
             }
         }
+
+        return nearest;
     }
 
     public void cleanup() {

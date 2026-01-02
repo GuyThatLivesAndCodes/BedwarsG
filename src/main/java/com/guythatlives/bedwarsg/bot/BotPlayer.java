@@ -3,6 +3,7 @@ package com.guythatlives.bedwarsg.bot;
 import com.guythatlives.bedwarsg.BedwarsG;
 import com.guythatlives.bedwarsg.arena.Arena;
 import org.bukkit.Location;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
@@ -11,7 +12,7 @@ import java.util.UUID;
 
 /**
  * Represents a bot player in the game
- * Note: This is a wrapper around a real Player object to avoid complex NPC dependencies
+ * Uses an ArmorStand entity to represent the bot visually
  */
 public class BotPlayer {
 
@@ -27,6 +28,7 @@ public class BotPlayer {
     private BukkitTask updateTask;
     private long lastModeSwitch;
     private int ticksAlive;
+    private ArmorStand armorStand; // The visual representation of the bot
 
     // State tracking
     private boolean isGathering;
@@ -70,8 +72,8 @@ public class BotPlayer {
      * Main update loop for the bot
      */
     private void tick() {
-        Player player = getPlayer();
-        if (player == null || !player.isOnline()) {
+        // Check if armor stand is still valid
+        if (armorStand == null || !armorStand.isValid() || armorStand.isDead()) {
             cleanup();
             return;
         }
@@ -108,10 +110,33 @@ public class BotPlayer {
     }
 
     /**
-     * Get the actual Player object for this bot
+     * Get the armor stand representing this bot
      */
-    public Player getPlayer() {
-        return plugin.getServer().getPlayer(uuid);
+    public ArmorStand getArmorStand() {
+        return armorStand;
+    }
+
+    /**
+     * Set the armor stand for this bot
+     */
+    public void setArmorStand(ArmorStand armorStand) {
+        this.armorStand = armorStand;
+    }
+
+    /**
+     * Get the location of the bot
+     */
+    public Location getLocation() {
+        return armorStand != null ? armorStand.getLocation() : null;
+    }
+
+    /**
+     * Teleport the bot to a location
+     */
+    public void teleport(Location location) {
+        if (armorStand != null && location != null) {
+            armorStand.teleport(location);
+        }
     }
 
     /**
@@ -124,6 +149,12 @@ public class BotPlayer {
 
         if (ai != null) {
             ai.cleanup();
+        }
+
+        // Remove armor stand
+        if (armorStand != null) {
+            armorStand.remove();
+            armorStand = null;
         }
     }
 
