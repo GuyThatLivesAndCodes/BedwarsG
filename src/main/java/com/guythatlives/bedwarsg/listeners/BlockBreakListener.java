@@ -69,73 +69,100 @@ public class BlockBreakListener implements Listener {
     private void handleBedBreak(BlockBreakEvent event, Player player, Arena arena, Block block) {
         BedwarsTeam breakerTeam = arena.getPlayerTeam(player);
 
+        // Get the game world
+        String gameWorldName = arena.getGameWorldName();
+        if (gameWorldName == null) {
+            return;
+        }
+
+        org.bukkit.World gameWorld = plugin.getServer().getWorld(gameWorldName);
+        if (gameWorld == null) {
+            return;
+        }
+
         // Find which team's bed was broken
         for (BedwarsTeam team : arena.getTeams().values()) {
-            org.bukkit.Location bedLoc = arena.getMap().getBed(team.getColor());
-            if (bedLoc != null) {
-                Block bedBlock = bedLoc.getBlock();
-                Block clickedBlock = block;
+            org.bukkit.Location sourceBedLoc = arena.getMap().getBed(team.getColor());
+            if (sourceBedLoc == null) {
+                continue;
+            }
 
-                // Check if the clicked block is the bed or its other half
-                boolean isBedBlock = false;
-                if (bedBlock.getLocation().equals(clickedBlock.getLocation())) {
-                    isBedBlock = true;
-                } else if (clickedBlock.getType().name().contains("_BED")) {
-                    // Check if it's the other half of the bed
-                    org.bukkit.block.data.BlockData blockData = clickedBlock.getBlockData();
-                    if (blockData instanceof org.bukkit.block.data.type.Bed) {
-                        org.bukkit.block.data.type.Bed bedData = (org.bukkit.block.data.type.Bed) blockData;
-                        org.bukkit.block.BlockFace facing = bedData.getFacing();
+            // Convert source bed location to game world coordinates
+            org.bukkit.Location gameBedLoc = new org.bukkit.Location(
+                gameWorld,
+                sourceBedLoc.getX(),
+                sourceBedLoc.getY(),
+                sourceBedLoc.getZ()
+            );
 
-                        // Get the other half of the bed
-                        Block otherHalf;
-                        if (bedData.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD) {
-                            otherHalf = clickedBlock.getRelative(facing.getOppositeFace());
-                        } else {
-                            otherHalf = clickedBlock.getRelative(facing);
-                        }
+            Block bedBlock = gameBedLoc.getBlock();
+            Block clickedBlock = block;
 
-                        if (bedBlock.getLocation().equals(otherHalf.getLocation())) {
-                            isBedBlock = true;
-                        }
+            // Check if the clicked block is the bed or its other half
+            boolean isBedBlock = false;
+
+            // Direct location match
+            if (bedBlock.getLocation().getBlockX() == clickedBlock.getLocation().getBlockX() &&
+                bedBlock.getLocation().getBlockY() == clickedBlock.getLocation().getBlockY() &&
+                bedBlock.getLocation().getBlockZ() == clickedBlock.getLocation().getBlockZ()) {
+                isBedBlock = true;
+            } else if (clickedBlock.getType().name().contains("_BED")) {
+                // Check if it's the other half of the bed
+                org.bukkit.block.data.BlockData blockData = clickedBlock.getBlockData();
+                if (blockData instanceof org.bukkit.block.data.type.Bed) {
+                    org.bukkit.block.data.type.Bed bedData = (org.bukkit.block.data.type.Bed) blockData;
+                    org.bukkit.block.BlockFace facing = bedData.getFacing();
+
+                    // Get the other half of the bed
+                    Block otherHalf;
+                    if (bedData.getPart() == org.bukkit.block.data.type.Bed.Part.HEAD) {
+                        otherHalf = clickedBlock.getRelative(facing.getOppositeFace());
+                    } else {
+                        otherHalf = clickedBlock.getRelative(facing);
+                    }
+
+                    if (bedBlock.getLocation().getBlockX() == otherHalf.getLocation().getBlockX() &&
+                        bedBlock.getLocation().getBlockY() == otherHalf.getLocation().getBlockY() &&
+                        bedBlock.getLocation().getBlockZ() == otherHalf.getLocation().getBlockZ()) {
+                        isBedBlock = true;
                     }
                 }
+            }
 
-                if (isBedBlock) {
-                    // Can't break own bed
-                    if (team.equals(breakerTeam)) {
-                        event.setCancelled(true);
-                        player.sendMessage(plugin.getConfigManager().getPrefix() + "§cYou can't break your own bed!");
-                        return;
-                    }
-
-                    // Break the bed
-                    team.setBedAlive(false);
-                    Game game = plugin.getGameManager().getGame(arena);
-                    if (game != null) {
-                        game.addBedDestroyed(player);
-                    }
-
-                    // Announce
-                    Map<String, String> placeholders = new HashMap<>();
-                    placeholders.put("player", player.getName());
-                    placeholders.put("team", team.getColor());
-                    String message = plugin.getConfigManager().getMessage("game.enemy-bed-destroyed", placeholders);
-
-                    for (Player p : arena.getPlayers()) {
-                        p.sendMessage(message);
-                    }
-
-                    // Send message to team whose bed was destroyed
-                    message = plugin.getConfigManager().getMessage("game.bed-destroyed");
-                    for (java.util.UUID uuid : team.getPlayers()) {
-                        Player teamPlayer = plugin.getServer().getPlayer(uuid);
-                        if (teamPlayer != null) {
-                            teamPlayer.sendMessage(message);
-                        }
-                    }
+            if (isBedBlock) {
+                // Can't break own bed
+                if (team.equals(breakerTeam)) {
+                    event.setCancelled(true);
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§cYou can't break your own bed!");
                     return;
                 }
+
+                // Break the bed
+                team.setBedAlive(false);
+                Game game = plugin.getGameManager().getGame(arena);
+                if (game != null) {
+                    game.addBedDestroyed(player);
+                }
+
+                // Announce
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("player", player.getName());
+                placeholders.put("team", team.getColor());
+                String message = plugin.getConfigManager().getMessage("game.enemy-bed-destroyed", placeholders);
+
+                for (Player p : arena.getPlayers()) {
+                    p.sendMessage(message);
+                }
+
+                // Send message to team whose bed was destroyed
+                message = plugin.getConfigManager().getMessage("game.bed-destroyed");
+                for (java.util.UUID uuid : team.getPlayers()) {
+                    Player teamPlayer = plugin.getServer().getPlayer(uuid);
+                    if (teamPlayer != null) {
+                        teamPlayer.sendMessage(message);
+                    }
+                }
+                return;
             }
         }
     }

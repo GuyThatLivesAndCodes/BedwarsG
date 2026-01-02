@@ -90,6 +90,14 @@ public class MapManager {
             }
         }
 
+        // Load generator speeds
+        if (config.contains("generator-speeds")) {
+            for (String type : config.getConfigurationSection("generator-speeds").getKeys(false)) {
+                int ticks = config.getInt("generator-speeds." + type);
+                map.setGeneratorSpeed(type, ticks);
+            }
+        }
+
         map.setEnabled(config.getBoolean("enabled", false));
         maps.put(name, map);
     }
@@ -125,6 +133,11 @@ public class MapManager {
         // Save shop locations
         for (Map.Entry<String, Location> entry : map.getShops().entrySet()) {
             serializeLocation(config, "shops." + entry.getKey(), entry.getValue());
+        }
+
+        // Save generator speeds
+        for (Map.Entry<String, Integer> entry : map.getGeneratorSpeeds().entrySet()) {
+            config.set("generator-speeds." + entry.getKey(), entry.getValue());
         }
 
         try {

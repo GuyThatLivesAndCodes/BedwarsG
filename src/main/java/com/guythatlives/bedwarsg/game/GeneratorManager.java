@@ -10,18 +10,17 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GeneratorManager {
 
     private final BedwarsG plugin;
-    private final Map<UUID, BukkitRunnable> activeTasks;
+    private final Map<UUID, List<BukkitRunnable>> activeTasks;
 
     public GeneratorManager(BedwarsG plugin) {
         this.plugin = plugin;
-        this.activeTasks = new HashMap<>();
+        this.activeTasks = new ConcurrentHashMap<>();
     }
 
     public void startGenerators(Arena arena, World gameWorld) {
@@ -30,39 +29,54 @@ public class GeneratorManager {
         }
 
         UUID arenaId = UUID.randomUUID();
+        List<BukkitRunnable> tasks = new ArrayList<>();
 
-        BukkitRunnable task = new BukkitRunnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<String, Location> entry : arena.getMap().getGenerators().entrySet()) {
-                    String generatorId = entry.getKey();
-                    // Extract type from ID (e.g., "IRON-0" -> "IRON")
-                    String type = generatorId.contains("-") ? generatorId.split("-")[0].toUpperCase() : generatorId.toUpperCase();
-                    Location originalLoc = entry.getValue();
+        // Group generators by type
+        Map<String, List<Location>> generatorsByType = new HashMap<>();
+        for (Map.Entry<String, Location> entry : arena.getMap().getGenerators().entrySet()) {
+            String generatorId = entry.getKey();
+            String type = generatorId.contains("-") ? generatorId.split("-")[0].toUpperCase() : generatorId.toUpperCase();
 
-                    // Convert location to game world
-                    Location gameLoc = new Location(
-                        gameWorld,
-                        originalLoc.getX(),
-                        originalLoc.getY(),
-                        originalLoc.getZ()
-                    );
+            generatorsByType.computeIfAbsent(type, k -> new ArrayList<>()).add(entry.getValue());
+        }
 
-                    spawnResource(gameLoc, type);
+        // Create a task for each generator type with its own speed
+        for (Map.Entry<String, List<Location>> entry : generatorsByType.entrySet()) {
+            String type = entry.getKey();
+            List<Location> locations = entry.getValue();
+            int speed = arena.getMap().getGeneratorSpeed(type);
+
+            BukkitRunnable task = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    for (Location originalLoc : locations) {
+                        // Convert location to game world
+                        Location gameLoc = new Location(
+                            gameWorld,
+                            originalLoc.getX(),
+                            originalLoc.getY(),
+                            originalLoc.getZ()
+                        );
+                        spawnResource(gameLoc, type);
+                    }
                 }
-            }
-        };
+            };
 
-        // Start task - runs every 2 seconds initially (we'll make this configurable)
-        task.runTaskTimer(plugin, 0L, 40L);
-        activeTasks.put(arenaId, task);
+            task.runTaskTimer(plugin, 0L, speed);
+            tasks.add(task);
+        }
+
+        activeTasks.put(arenaId, tasks);
         arena.setGeneratorTaskId(arenaId);
     }
 
     public void stopGenerators(Arena arena) {
         UUID taskId = arena.getGeneratorTaskId();
         if (taskId != null && activeTasks.containsKey(taskId)) {
-            activeTasks.get(taskId).cancel();
+            List<BukkitRunnable> tasks = activeTasks.get(taskId);
+            for (BukkitRunnable task : tasks) {
+                task.cancel();
+            }
             activeTasks.remove(taskId);
             arena.setGeneratorTaskId(null);
         }

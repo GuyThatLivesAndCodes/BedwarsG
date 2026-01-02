@@ -68,9 +68,23 @@ public class PlayerDeathListener implements Listener {
             p.sendMessage(message);
         }
 
-        // Clear drops
+        // Transfer items to killer or clear them
+        if (killer != null && killer != player) {
+            // Give all drops to killer
+            for (org.bukkit.inventory.ItemStack item : event.getDrops()) {
+                if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                    killer.getInventory().addItem(item);
+                }
+            }
+        }
+
+        // Clear all drops (items already transferred to killer if exists)
         event.getDrops().clear();
         event.setDroppedExp(0);
+
+        // Keep inventory on death (Hypixel style - no death screen)
+        event.setKeepInventory(false); // We already cleared drops, so this doesn't matter
+        event.setKeepLevel(true);
 
         // Handle respawn or elimination
         if (canRespawn) {
@@ -120,28 +134,43 @@ public class PlayerDeathListener implements Listener {
     }
 
     private void handleElimination(Player player, Arena arena, BedwarsTeam team) {
-        // Set player to spectator mode in the game world
-        player.setGameMode(org.bukkit.GameMode.SPECTATOR);
-        player.setAllowFlight(true);
-        player.setFlying(true);
+        // Respawn player first to clear death screen, then set to spectator
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // Respawn the player to clear death screen
+                player.spigot().respawn();
 
-        // Teleport to center of map if possible
-        if (arena.getGameWorldName() != null) {
-            org.bukkit.World gameWorld = org.bukkit.Bukkit.getWorld(arena.getGameWorldName());
-            if (gameWorld != null) {
-                player.teleport(gameWorld.getSpawnLocation().add(0, 20, 0));
+                // Set to spectator mode
+                player.setGameMode(org.bukkit.GameMode.SPECTATOR);
+                player.setAllowFlight(true);
+                player.setFlying(true);
+
+                // Clear inventory
+                player.getInventory().clear();
+
+                // Teleport to center of map if possible
+                if (arena.getGameWorldName() != null) {
+                    org.bukkit.World gameWorld = org.bukkit.Bukkit.getWorld(arena.getGameWorldName());
+                    if (gameWorld != null) {
+                        player.teleport(gameWorld.getSpawnLocation().add(0, 20, 0));
+                    }
+                }
+
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§cYou have been eliminated! You are now spectating.");
             }
-        }
-
-        player.sendMessage(plugin.getConfigManager().getPrefix() + "§cYou have been eliminated! You are now spectating.");
+        }.runTaskLater(plugin, 1L);
 
         // Check if team is eliminated
         boolean hasAlivePlayers = false;
         for (java.util.UUID uuid : team.getPlayers()) {
             Player p = plugin.getServer().getPlayer(uuid);
             if (p != null && p.isOnline() && !p.equals(player)) {
-                hasAlivePlayers = true;
-                break;
+                // Check if this player is not in spectator mode (i.e., still alive)
+                if (p.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+                    hasAlivePlayers = true;
+                    break;
+                }
             }
         }
 

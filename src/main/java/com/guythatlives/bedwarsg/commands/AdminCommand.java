@@ -68,6 +68,9 @@ public class AdminCommand implements CommandExecutor {
             case "listgen":
                 handleListGenerators(player, args);
                 break;
+            case "genspeed":
+                handleGeneratorSpeed(player, args);
+                break;
             case "setshop":
                 handleSetShop(player, args);
                 break;
@@ -261,6 +264,70 @@ public class AdminCommand implements CommandExecutor {
                 org.bukkit.Location loc = entry.getValue();
                 player.sendMessage("§e" + entry.getKey() + " §7@ §f" +
                     (int)loc.getX() + ", " + (int)loc.getY() + ", " + (int)loc.getZ());
+            }
+        }
+    }
+
+    private void handleGeneratorSpeed(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin genspeed <map> [type] [ticks]");
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§7Examples:");
+            player.sendMessage("§e  /bwadmin genspeed mapname §7- List all speeds");
+            player.sendMessage("§e  /bwadmin genspeed mapname IRON §7- Get IRON speed");
+            player.sendMessage("§e  /bwadmin genspeed mapname GOLD 40 §7- Set GOLD to 40 ticks (2 seconds)");
+            return;
+        }
+
+        String mapName = args[1];
+        BedwarsMap map = plugin.getMapManager().getMap(mapName);
+        if (map == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cMap not found!");
+            return;
+        }
+
+        // List all speeds
+        if (args.length == 2) {
+            player.sendMessage("§8§m----------§r §eGenerator Speeds: " + mapName + " §8§m----------");
+            player.sendMessage("§7(20 ticks = 1 second)");
+            for (Map.Entry<String, Integer> entry : map.getGeneratorSpeeds().entrySet()) {
+                int ticks = entry.getValue();
+                double seconds = ticks / 20.0;
+                player.sendMessage("§e" + entry.getKey() + ": §f" + ticks + " ticks §7(" + seconds + "s)");
+            }
+            return;
+        }
+
+        String type = args[2].toUpperCase();
+
+        // Get speed for specific type
+        if (args.length == 3) {
+            if (!map.getGeneratorSpeeds().containsKey(type)) {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUnknown generator type: " + type);
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§7Valid types: IRON, GOLD, DIAMOND, EMERALD");
+                return;
+            }
+            int ticks = map.getGeneratorSpeed(type);
+            double seconds = ticks / 20.0;
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§e" + type + " §7speed: §f" + ticks + " ticks §7(" + seconds + "s)");
+            return;
+        }
+
+        // Set speed for specific type
+        if (args.length >= 4) {
+            try {
+                int ticks = Integer.parseInt(args[3]);
+                if (ticks < 1) {
+                    player.sendMessage(plugin.getConfigManager().getPrefix() + "§cSpeed must be at least 1 tick!");
+                    return;
+                }
+
+                map.setGeneratorSpeed(type, ticks);
+                plugin.getMapManager().saveMap(map);
+
+                double seconds = ticks / 20.0;
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§aSet " + type + " generator speed to " + ticks + " ticks (" + seconds + "s)");
+            } catch (NumberFormatException e) {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§cInvalid number: " + args[3]);
             }
         }
     }
@@ -497,6 +564,7 @@ public class AdminCommand implements CommandExecutor {
         player.sendMessage("§e/bwadmin addgen <map> <type> §7- Add generator");
         player.sendMessage("§e/bwadmin delgen <map> <id> §7- Delete generator");
         player.sendMessage("§e/bwadmin listgen <map> §7- List generators");
+        player.sendMessage("§e/bwadmin genspeed <map> [type] [ticks] §7- Get/Set generator speeds");
         player.sendMessage("§e/bwadmin vis <map> §7- Visual editor (particles)");
         player.sendMessage("§e/bwadmin enable <map> §7- Enable a map");
         player.sendMessage("§e/bwadmin disable <map> §7- Disable a map");

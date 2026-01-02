@@ -18,6 +18,7 @@ public class BedwarsMap {
     private Map<String, Location> beds;
     private Map<String, Location> generators;
     private Map<String, Location> shops;
+    private Map<String, Integer> generatorSpeeds; // Type -> Speed in ticks
 
     public BedwarsMap(String name) {
         this.name = name;
@@ -29,6 +30,13 @@ public class BedwarsMap {
         this.beds = new HashMap<>();
         this.generators = new HashMap<>();
         this.shops = new HashMap<>();
+        this.generatorSpeeds = new HashMap<>();
+
+        // Default generator speeds (in ticks, 20 ticks = 1 second)
+        this.generatorSpeeds.put("IRON", 20);      // 1 second
+        this.generatorSpeeds.put("GOLD", 60);      // 3 seconds
+        this.generatorSpeeds.put("DIAMOND", 200);  // 10 seconds
+        this.generatorSpeeds.put("EMERALD", 300);  // 15 seconds
     }
 
     public String getName() {
@@ -124,6 +132,18 @@ public class BedwarsMap {
             String[] keys = generators.keySet().toArray(new String[0]);
             generators.remove(keys[index]);
         }
+    }
+
+    public Map<String, Integer> getGeneratorSpeeds() {
+        return generatorSpeeds;
+    }
+
+    public int getGeneratorSpeed(String type) {
+        return generatorSpeeds.getOrDefault(type, 40); // Default 2 seconds if not found
+    }
+
+    public void setGeneratorSpeed(String type, int ticks) {
+        generatorSpeeds.put(type, ticks);
     }
 
     public boolean isSetupComplete() {

@@ -5,6 +5,7 @@ import com.guythatlives.bedwarsg.commands.*;
 import com.guythatlives.bedwarsg.game.GameManager;
 import com.guythatlives.bedwarsg.game.GeneratorManager;
 import com.guythatlives.bedwarsg.game.ShopNPCManager;
+import com.guythatlives.bedwarsg.game.VoidDeathTask;
 import com.guythatlives.bedwarsg.gui.AdminGUI;
 import com.guythatlives.bedwarsg.gui.PlayerGUI;
 import com.guythatlives.bedwarsg.listeners.*;
@@ -67,6 +68,9 @@ public class BedwarsG extends JavaPlugin {
         // Start visualizer
         mapVisualizer.startVisualization();
 
+        // Start void death checker (checks every 5 ticks = 0.25 seconds)
+        new VoidDeathTask(this).runTaskTimer(this, 0L, 5L);
+
         getLogger().info("BedwarsG has been enabled successfully!");
     }
 
@@ -126,6 +130,7 @@ public class BedwarsG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
         getServer().getPluginManager().registerEvents(new GUIClickListener(this), this);
+        getServer().getPluginManager().registerEvents(new ShopInteractListener(this), this);
     }
 
     public static BedwarsG getInstance() {
