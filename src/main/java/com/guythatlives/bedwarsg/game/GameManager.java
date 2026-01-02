@@ -7,7 +7,6 @@ import com.guythatlives.bedwarsg.arena.BedwarsTeam;
 import com.guythatlives.bedwarsg.arena.GameMode;
 import com.guythatlives.bedwarsg.map.BedwarsMap;
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode as BukkitGameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -91,7 +90,7 @@ public class GameManager {
 
         for (Player player : arena.getPlayers()) {
             player.sendMessage(message);
-            player.setGameMode(BukkitGameMode.SURVIVAL);
+            player.setGameMode(org.bukkit.GameMode.SURVIVAL);
 
             // Teleport to team spawn in game world
             BedwarsTeam team = arena.getPlayerTeam(player);
@@ -158,7 +157,7 @@ public class GameManager {
             if (lobbySpawn != null) {
                 player.teleport(lobbySpawn);
             }
-            player.setGameMode(BukkitGameMode.ADVENTURE);
+            player.setGameMode(org.bukkit.GameMode.ADVENTURE);
         }
 
         // Delete game world
