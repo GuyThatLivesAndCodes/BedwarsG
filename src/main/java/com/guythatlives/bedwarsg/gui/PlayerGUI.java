@@ -129,7 +129,7 @@ public class PlayerGUI {
 
         // Games Played
         inv.setItem(16, createItem(Material.BOOK, "§b§lGames Played",
-            "§7Total: §e" + (stats.getWins() + stats.getLosses()));
+            "§7Total: §e" + (stats.getWins() + stats.getLosses())));
 
         // Back button
         inv.setItem(22, createItem(Material.ARROW, "§c§lBack", "§7Return to main menu"));
