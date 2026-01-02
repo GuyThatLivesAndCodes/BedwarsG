@@ -36,7 +36,8 @@ public class AdminCommand implements CommandExecutor {
         }
 
         if (args.length == 0) {
-            sendHelp(player);
+            // Open Admin GUI
+            plugin.getAdminGUI().openMainMenu(player);
             return true;
         }
 
@@ -61,6 +62,15 @@ public class AdminCommand implements CommandExecutor {
             case "addgen":
                 handleAddGenerator(player, args);
                 break;
+            case "delgen":
+                handleDeleteGenerator(player, args);
+                break;
+            case "listgen":
+                handleListGenerators(player, args);
+                break;
+            case "setshop":
+                handleSetShop(player, args);
+                break;
             case "enable":
                 handleEnableMap(player, args);
                 break;
@@ -82,6 +92,10 @@ public class AdminCommand implements CommandExecutor {
                 break;
             case "forceend":
                 handleForceEnd(player, args);
+                break;
+            case "visualize":
+            case "vis":
+                handleVisualize(player, args);
                 break;
             default:
                 sendHelp(player);
@@ -185,12 +199,91 @@ public class AdminCommand implements CommandExecutor {
             return;
         }
 
-        map.addGenerator(type, player.getLocation());
+        // Add generator with unique ID (type + current count)
+        int count = 0;
+        for (String key : map.getGenerators().keySet()) {
+            if (key.startsWith(type)) {
+                count++;
+            }
+        }
+        String genId = type + "-" + count;
+        map.addGenerator(genId, player.getLocation());
         plugin.getMapManager().saveMap(map);
 
         Map<String, String> placeholders = new HashMap<>();
         placeholders.put("arena", mapName);
         player.sendMessage(plugin.getConfigManager().getMessage("admin.generator-added", placeholders));
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§aGenerator ID: §e" + genId);
+    }
+
+    private void handleDeleteGenerator(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin delgen <map> <id>");
+            return;
+        }
+
+        String mapName = args[1];
+        String genId = args[2];
+
+        BedwarsMap map = plugin.getMapManager().getMap(mapName);
+        if (map == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cMap not found!");
+            return;
+        }
+
+        if (map.getGenerators().containsKey(genId)) {
+            map.getGenerators().remove(genId);
+            plugin.getMapManager().saveMap(map);
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§aGenerator deleted: §e" + genId);
+        } else {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cGenerator not found: §e" + genId);
+        }
+    }
+
+    private void handleListGenerators(Player player, String[] args) {
+        if (args.length < 2) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin listgen <map>");
+            return;
+        }
+
+        String mapName = args[1];
+        BedwarsMap map = plugin.getMapManager().getMap(mapName);
+        if (map == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cMap not found!");
+            return;
+        }
+
+        player.sendMessage("§8§m----------§r §eGenerators: " + mapName + " §8§m----------");
+        if (map.getGenerators().isEmpty()) {
+            player.sendMessage("§7No generators configured");
+        } else {
+            for (Map.Entry<String, org.bukkit.Location> entry : map.getGenerators().entrySet()) {
+                org.bukkit.Location loc = entry.getValue();
+                player.sendMessage("§e" + entry.getKey() + " §7@ §f" +
+                    (int)loc.getX() + ", " + (int)loc.getY() + ", " + (int)loc.getZ());
+            }
+        }
+    }
+
+    private void handleSetShop(Player player, String[] args) {
+        if (args.length < 3) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin setshop <map> <team>");
+            return;
+        }
+
+        String mapName = args[1];
+        String team = args[2].toUpperCase();
+
+        BedwarsMap map = plugin.getMapManager().getMap(mapName);
+        if (map == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cMap not found!");
+            return;
+        }
+
+        map.addShop(team, player.getLocation());
+        plugin.getMapManager().saveMap(map);
+
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§aShop set for team: §e" + team);
     }
 
     private void handleEnableMap(Player player, String[] args) {
@@ -364,6 +457,28 @@ public class AdminCommand implements CommandExecutor {
         player.sendMessage(plugin.getConfigManager().getMessage("admin.game-force-stopped"));
     }
 
+    private void handleVisualize(Player player, String[] args) {
+        if (args.length < 2) {
+            // Toggle off if already enabled
+            if (plugin.getMapVisualizer().isInEditMode(player)) {
+                plugin.getMapVisualizer().disableEditMode(player);
+            } else {
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§cUsage: /bwadmin vis <map>");
+                player.sendMessage(plugin.getConfigManager().getPrefix() + "§7Or use /bwadmin vis to disable");
+            }
+            return;
+        }
+
+        String mapName = args[1];
+        BedwarsMap map = plugin.getMapManager().getMap(mapName);
+        if (map == null) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cMap not found!");
+            return;
+        }
+
+        plugin.getMapVisualizer().enableEditMode(player, mapName);
+    }
+
     private String formatTime(int seconds) {
         int minutes = seconds / 60;
         int secs = seconds % 60;
@@ -378,7 +493,11 @@ public class AdminCommand implements CommandExecutor {
         player.sendMessage("§e/bwadmin savemapworld <name> §7- Save current world as map");
         player.sendMessage("§e/bwadmin setspawn <map> <team> §7- Set team spawn");
         player.sendMessage("§e/bwadmin setbed <map> <team> §7- Set team bed");
+        player.sendMessage("§e/bwadmin setshop <map> <team> §7- Set team shop");
         player.sendMessage("§e/bwadmin addgen <map> <type> §7- Add generator");
+        player.sendMessage("§e/bwadmin delgen <map> <id> §7- Delete generator");
+        player.sendMessage("§e/bwadmin listgen <map> §7- List generators");
+        player.sendMessage("§e/bwadmin vis <map> §7- Visual editor (particles)");
         player.sendMessage("§e/bwadmin enable <map> §7- Enable a map");
         player.sendMessage("§e/bwadmin disable <map> §7- Disable a map");
         player.sendMessage("§e/bwadmin list §7- List all maps");

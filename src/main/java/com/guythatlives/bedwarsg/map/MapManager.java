@@ -80,6 +80,16 @@ public class MapManager {
             }
         }
 
+        // Load shop locations
+        if (config.contains("shops")) {
+            for (String team : config.getConfigurationSection("shops").getKeys(false)) {
+                Location loc = deserializeLocation(config, "shops." + team);
+                if (loc != null) {
+                    map.addShop(team, loc);
+                }
+            }
+        }
+
         map.setEnabled(config.getBoolean("enabled", false));
         maps.put(name, map);
     }
@@ -110,6 +120,11 @@ public class MapManager {
             config.set("generators." + index + ".type", entry.getKey());
             serializeLocation(config, "generators." + index + ".location", entry.getValue());
             index++;
+        }
+
+        // Save shop locations
+        for (Map.Entry<String, Location> entry : map.getShops().entrySet()) {
+            serializeLocation(config, "shops." + entry.getKey(), entry.getValue());
         }
 
         try {

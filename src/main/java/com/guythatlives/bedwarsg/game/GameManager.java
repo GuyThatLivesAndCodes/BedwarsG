@@ -82,11 +82,17 @@ public class GameManager {
         arena.setGameWorldName(worldName);
         arena.setState(ArenaState.RUNNING);
 
+        org.bukkit.World gameWorld = Bukkit.getWorld(worldName);
+
         Game game = createGame(arena);
         game.start();
 
+        // Start generators in the game world
+        if (gameWorld != null) {
+            plugin.getGeneratorManager().startGenerators(arena, gameWorld);
+        }
+
         String message = plugin.getConfigManager().getMessage("game.started");
-        org.bukkit.World gameWorld = Bukkit.getWorld(worldName);
 
         for (Player player : arena.getPlayers()) {
             player.sendMessage(message);
@@ -149,6 +155,9 @@ public class GameManager {
     }
 
     private void resetArena(Arena arena) {
+        // Stop generators
+        plugin.getGeneratorManager().stopGenerators(arena);
+
         // Teleport players back to lobby
         for (Player player : new ArrayList<>(arena.getPlayers())) {
             arena.removePlayer(player);

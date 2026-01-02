@@ -26,7 +26,8 @@ public class BedwarsCommand implements CommandExecutor {
         Player player = (Player) sender;
 
         if (args.length == 0) {
-            sendHelp(player);
+            // Open GUI menu
+            plugin.getPlayerGUI().openMainMenu(player);
             return true;
         }
 

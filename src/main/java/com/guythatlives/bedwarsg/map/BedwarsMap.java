@@ -17,6 +17,7 @@ public class BedwarsMap {
     private Map<String, Location> spawns;
     private Map<String, Location> beds;
     private Map<String, Location> generators;
+    private Map<String, Location> shops;
 
     public BedwarsMap(String name) {
         this.name = name;
@@ -27,6 +28,7 @@ public class BedwarsMap {
         this.spawns = new HashMap<>();
         this.beds = new HashMap<>();
         this.generators = new HashMap<>();
+        this.shops = new HashMap<>();
     }
 
     public String getName() {
@@ -85,6 +87,10 @@ public class BedwarsMap {
         generators.put(type, location);
     }
 
+    public void addShop(String team, Location location) {
+        shops.put(team, location);
+    }
+
     public Map<String, Location> getSpawns() {
         return spawns;
     }
@@ -97,12 +103,27 @@ public class BedwarsMap {
         return generators;
     }
 
+    public Map<String, Location> getShops() {
+        return shops;
+    }
+
     public Location getSpawn(String team) {
         return spawns.get(team);
     }
 
     public Location getBed(String team) {
         return beds.get(team);
+    }
+
+    public Location getShop(String team) {
+        return shops.get(team);
+    }
+
+    public void removeGenerator(int index) {
+        if (index >= 0 && index < generators.size()) {
+            String[] keys = generators.keySet().toArray(new String[0]);
+            generators.remove(keys[index]);
+        }
     }
 
     public boolean isSetupComplete() {

@@ -21,6 +21,7 @@ public class Arena {
     private int countdown;
     private int gameTimer;
     private String gameWorldName;
+    private UUID generatorTaskId;
 
     public Arena(String name, BedwarsMap map, GameMode gameMode, BedwarsG plugin) {
         this.name = name;
@@ -172,5 +173,13 @@ public class Arena {
 
     public void setGameWorldName(String gameWorldName) {
         this.gameWorldName = gameWorldName;
+    }
+
+    public UUID getGeneratorTaskId() {
+        return generatorTaskId;
+    }
+
+    public void setGeneratorTaskId(UUID generatorTaskId) {
+        this.generatorTaskId = generatorTaskId;
     }
 }

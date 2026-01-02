@@ -3,11 +3,15 @@ package com.guythatlives.bedwarsg;
 import com.guythatlives.bedwarsg.arena.ArenaManager;
 import com.guythatlives.bedwarsg.commands.*;
 import com.guythatlives.bedwarsg.game.GameManager;
+import com.guythatlives.bedwarsg.game.GeneratorManager;
+import com.guythatlives.bedwarsg.gui.AdminGUI;
+import com.guythatlives.bedwarsg.gui.PlayerGUI;
 import com.guythatlives.bedwarsg.listeners.*;
 import com.guythatlives.bedwarsg.map.MapManager;
 import com.guythatlives.bedwarsg.party.PartyManager;
 import com.guythatlives.bedwarsg.shop.ShopManager;
 import com.guythatlives.bedwarsg.stats.StatsManager;
+import com.guythatlives.bedwarsg.visual.MapVisualizer;
 import com.guythatlives.bedwarsg.world.WorldManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -17,12 +21,16 @@ public class BedwarsG extends JavaPlugin {
 
     private ArenaManager arenaManager;
     private GameManager gameManager;
+    private GeneratorManager generatorManager;
     private MapManager mapManager;
     private PartyManager partyManager;
     private ShopManager shopManager;
     private StatsManager statsManager;
     private ConfigManager configManager;
     private WorldManager worldManager;
+    private MapVisualizer mapVisualizer;
+    private PlayerGUI playerGUI;
+    private AdminGUI adminGUI;
 
     @Override
     public void onEnable() {
@@ -39,9 +47,13 @@ public class BedwarsG extends JavaPlugin {
         mapManager = new MapManager(this);
         arenaManager = new ArenaManager(this);
         partyManager = new PartyManager(this);
+        generatorManager = new GeneratorManager(this);
         gameManager = new GameManager(this);
         shopManager = new ShopManager(this);
         statsManager = new StatsManager(this);
+        mapVisualizer = new MapVisualizer(this);
+        playerGUI = new PlayerGUI(this);
+        adminGUI = new AdminGUI(this);
 
         // Register commands
         registerCommands();
@@ -49,12 +61,20 @@ public class BedwarsG extends JavaPlugin {
         // Register listeners
         registerListeners();
 
+        // Start visualizer
+        mapVisualizer.startVisualization();
+
         getLogger().info("BedwarsG has been enabled successfully!");
     }
 
     @Override
     public void onDisable() {
         getLogger().info("Shutting down BedwarsG...");
+
+        // Stop visualizer
+        if (mapVisualizer != null) {
+            mapVisualizer.stopVisualization();
+        }
 
         // End all games gracefully
         if (gameManager != null) {
@@ -97,6 +117,7 @@ public class BedwarsG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new EntityDamageListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
+        getServer().getPluginManager().registerEvents(new GUIClickListener(this), this);
     }
 
     public static BedwarsG getInstance() {
@@ -109,6 +130,10 @@ public class BedwarsG extends JavaPlugin {
 
     public GameManager getGameManager() {
         return gameManager;
+    }
+
+    public GeneratorManager getGeneratorManager() {
+        return generatorManager;
     }
 
     public MapManager getMapManager() {
@@ -133,5 +158,17 @@ public class BedwarsG extends JavaPlugin {
 
     public WorldManager getWorldManager() {
         return worldManager;
+    }
+
+    public MapVisualizer getMapVisualizer() {
+        return mapVisualizer;
+    }
+
+    public PlayerGUI getPlayerGUI() {
+        return playerGUI;
+    }
+
+    public AdminGUI getAdminGUI() {
+        return adminGUI;
     }
 }
