@@ -1,0 +1,135 @@
+# BedwarsG Configuration File
+
+# General Settings
+settings:
+  # Main lobby spawn location
+  lobby-spawn:
+    world: world
+    x: 0
+    y: 100
+    z: 0
+    yaw: 0
+    pitch: 0
+
+  # Minimum players to start a game
+  min-players: 2
+
+  # Maximum players per team
+  max-team-size: 4
+
+  # Game countdown time (seconds)
+  countdown-time: 10
+
+  # Auto-start when all players ready
+  auto-start: true
+
+  # Allow spectators
+  allow-spectators: true
+
+  # Party system enabled
+  party-system: true
+
+  # Maximum party size
+  max-party-size: 8
+
+# Game Mode Settings
+game-modes:
+  solo:
+    enabled: true
+    teams: 8
+    players-per-team: 1
+    permission: bedwarsg.play.solo
+
+  doubles:
+    enabled: true
+    teams: 8
+    players-per-team: 2
+    permission: bedwarsg.play.doubles
+
+  3v3v3v3:
+    enabled: true
+    teams: 4
+    players-per-team: 3
+    permission: bedwarsg.play.3v3v3v3
+
+  4v4v4v4:
+    enabled: true
+    teams: 4
+    players-per-team: 4
+    permission: bedwarsg.play.4v4v4v4
+
+  1v1:
+    enabled: true
+    teams: 2
+    players-per-team: 1
+    permission: bedwarsg.play.1v1
+
+  custom:
+    enabled: true
+    permission: bedwarsg.play.custom
+
+# Resource Generator Settings
+generators:
+  iron:
+    initial-delay: 1
+    spawn-rate: 1.5
+    items-per-spawn: 1
+    max-stack: 64
+
+  gold:
+    initial-delay: 5
+    spawn-rate: 7
+    items-per-spawn: 1
+    max-stack: 64
+
+  diamond:
+    initial-delay: 30
+    spawn-rate: 30
+    items-per-spawn: 1
+    max-stack: 64
+    team-generator: false
+
+  emerald:
+    initial-delay: 60
+    spawn-rate: 60
+    items-per-spawn: 1
+    max-stack: 64
+    team-generator: false
+
+# Team Colors
+teams:
+  - RED
+  - BLUE
+  - GREEN
+  - YELLOW
+  - AQUA
+  - WHITE
+  - PINK
+  - GRAY
+
+# Respawn Settings
+respawn:
+  enabled: true
+  time: 5
+  title-enabled: true
+  invulnerability-time: 5
+
+# Shop Settings
+shop:
+  quick-buy-enabled: true
+  close-on-purchase: false
+
+# Stats Tracking
+stats:
+  enabled: true
+  track-kills: true
+  track-deaths: true
+  track-wins: true
+  track-losses: true
+  track-beds-broken: true
+  track-final-kills: true
+
+# Performance
+performance:
+  auto-save-interval: 300
+  max-arenas: 50

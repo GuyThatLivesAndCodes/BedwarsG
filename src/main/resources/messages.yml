@@ -1,0 +1,100 @@
+# BedwarsG Messages Configuration
+
+# General Messages
+prefix: "&8[&cBedwars&bG&8]&r "
+no-permission: "&cYou don't have permission to do that!"
+player-not-found: "&cPlayer not found!"
+player-only: "&cThis command can only be used by players!"
+
+# Game Messages
+game:
+  joined: "&aYou joined the game!"
+  left: "&cYou left the game!"
+  full: "&cThis game is full!"
+  already-in-game: "&cYou're already in a game!"
+  not-in-game: "&cYou're not in a game!"
+  countdown: "&eGame starting in &c{time} &eseconds!"
+  started: "&aThe game has started! Protect your bed and destroy enemy beds!"
+  ended: "&eThe game has ended!"
+  victory: "&aYour team won! &e+{coins} coins"
+  defeat: "&cYour team was eliminated!"
+  bed-destroyed: "&cYour bed was destroyed! You will no longer respawn!"
+  enemy-bed-destroyed: "&a{player} &edestroyed &c{team}'s &ebed!"
+  player-killed: "&c{killer} &ekilled &c{victim}"
+  final-kill: "&c{killer} &efinal killed &c{victim}&e!"
+  respawn-in: "&eRespawning in &c{time} &eseconds..."
+  elimination: "&c{team} &ehas been eliminated!"
+
+# Party Messages
+party:
+  created: "&aYou created a party!"
+  disbanded: "&cThe party has been disbanded!"
+  invited: "&aYou invited &e{player} &ato the party!"
+  invite-received: "&e{player} &ainvited you to their party! &7/bp join {player}"
+  joined: "&e{player} &ajoined the party!"
+  left: "&e{player} &cleft the party!"
+  kicked: "&cYou were kicked from the party!"
+  player-kicked: "&e{player} &cwas kicked from the party!"
+  not-in-party: "&cYou're not in a party!"
+  already-in-party: "&cYou're already in a party!"
+  not-leader: "&cYou're not the party leader!"
+  party-full: "&cThe party is full!"
+  cannot-invite-self: "&cYou cannot invite yourself!"
+  no-pending-invite: "&cYou don't have a pending party invite from that player!"
+
+# 1v1 Messages
+duel:
+  sent: "&aYou sent a 1v1 request to &e{player}"
+  received: "&e{player} &awants to 1v1 you! &7/bw1v1 {player} to accept"
+  accepted: "&aDuel accepted! Starting match..."
+  declined: "&cDuel request declined!"
+  expired: "&cDuel request expired!"
+  already-sent: "&cYou already have a pending duel request with this player!"
+  cannot-duel-self: "&cYou cannot duel yourself!"
+
+# Admin Messages
+admin:
+  arena-created: "&aArena &e{arena} &acreated!"
+  arena-deleted: "&cArena &e{arena} &cdeleted!"
+  lobby-set: "&aLobby spawn set for arena &e{arena}"
+  spawn-added: "&aSpawn point added for team &e{team} &ain arena &e{arena}"
+  bed-set: "&aBed location set for team &e{team} &ain arena &e{arena}"
+  generator-added: "&aGenerator added at your location in arena &e{arena}"
+  arena-enabled: "&aArena &e{arena} &ais now enabled!"
+  arena-disabled: "&cArena &e{arena} &cis now disabled!"
+  game-force-started: "&aGame force started!"
+  game-force-stopped: "&cGame force stopped!"
+  setup-mode-enabled: "&aSetup mode enabled!"
+  setup-mode-disabled: "&cSetup mode disabled!"
+
+# Shop Messages
+shop:
+  purchased: "&aYou purchased &e{item} &afor &e{cost} {currency}"
+  insufficient-funds: "&cYou don't have enough {currency}!"
+  max-tier: "&cThis item is already at max tier!"
+
+# Stats Messages
+stats:
+  header: "&8&m----------&r &cBedwars Stats &8&m----------"
+  player: "&ePlayer: &a{player}"
+  kills: "&eKills: &a{kills}"
+  deaths: "&eDeaths: &a{deaths}"
+  kdr: "&eK/D Ratio: &a{kdr}"
+  wins: "&eWins: &a{wins}"
+  losses: "&eLosses: &a{losses}"
+  wlr: "&eW/L Ratio: &a{wlr}"
+  beds-broken: "&eBeds Broken: &a{beds}"
+  final-kills: "&eFinal Kills: &a{final-kills}"
+  games-played: "&eGames Played: &a{games}"
+  footer: "&8&m--------------------------------"
+
+# Team Colors (for messages)
+team-colors:
+  RED: "&c"
+  BLUE: "&9"
+  GREEN: "&a"
+  YELLOW: "&e"
+  AQUA: "&b"
+  WHITE: "&f"
+  PINK: "&d"
+  GRAY: "&7"
