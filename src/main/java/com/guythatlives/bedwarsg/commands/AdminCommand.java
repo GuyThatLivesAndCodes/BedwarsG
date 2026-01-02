@@ -100,6 +100,9 @@ public class AdminCommand implements CommandExecutor {
             case "vis":
                 handleVisualize(player, args);
                 break;
+            case "reload":
+                handleReload(player);
+                break;
             default:
                 sendHelp(player);
                 break;
@@ -552,6 +555,28 @@ public class AdminCommand implements CommandExecutor {
         return String.format("%d:%02d", minutes, secs);
     }
 
+    private void handleReload(Player player) {
+        player.sendMessage(plugin.getConfigManager().getPrefix() + "§eReloading BedwarsG configuration...");
+
+        try {
+            // Reload main config
+            plugin.reloadConfig();
+            plugin.getConfigManager().loadConfigs();
+
+            // Reload bot manager configuration
+            if (plugin.getBotManager() != null) {
+                plugin.getBotManager().reload();
+            }
+
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§aConfiguration reloaded successfully!");
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§7Note: Some changes may require a server restart to take full effect.");
+        } catch (Exception e) {
+            player.sendMessage(plugin.getConfigManager().getPrefix() + "§cError reloading configuration!");
+            plugin.getLogger().severe("Error reloading configuration: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     private void sendHelp(Player player) {
         player.sendMessage("§8§m----------§r §cBedwarsG Admin §8§m----------");
         player.sendMessage("§6Map Management:");
@@ -575,5 +600,8 @@ public class AdminCommand implements CommandExecutor {
         player.sendMessage("§e/bwadmin games §7- View running games");
         player.sendMessage("§e/bwadmin tp <arena> §7- Teleport to game");
         player.sendMessage("§e/bwadmin forceend <arena> §7- Force end a game");
+        player.sendMessage("");
+        player.sendMessage("§6System:");
+        player.sendMessage("§e/bwadmin reload §7- Reload plugin configuration");
     }
 }

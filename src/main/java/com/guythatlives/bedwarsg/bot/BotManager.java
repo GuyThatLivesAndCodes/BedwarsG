@@ -303,12 +303,19 @@ public class BotManager {
 
     /**
      * Assign a bot to a team (prefers teams with fewer players)
+     * Only assigns to teams that have spawn points configured
      */
     private BedwarsTeam assignBotToTeam(Arena arena) {
         BedwarsTeam smallestTeam = null;
         int smallestSize = Integer.MAX_VALUE;
 
         for (BedwarsTeam team : arena.getTeams().values()) {
+            // Only consider teams that have spawn points configured
+            Location spawnLoc = arena.getMap().getSpawn(team.getColor());
+            if (spawnLoc == null) {
+                continue; // Skip teams without spawn points
+            }
+
             int teamSize = team.getPlayers().size();
             if (teamSize < smallestSize) {
                 smallestSize = teamSize;
@@ -316,14 +323,7 @@ public class BotManager {
             }
         }
 
-        // Add bot to team if found
-        if (smallestTeam != null) {
-            // Note: This requires the team to accept UUID - may need to modify BedwarsTeam
-            // For now, this is a placeholder
-            return smallestTeam;
-        }
-
-        return null;
+        return smallestTeam;
     }
 
     /**
