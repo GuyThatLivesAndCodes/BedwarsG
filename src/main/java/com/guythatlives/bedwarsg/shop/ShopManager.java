@@ -24,10 +24,10 @@ public class ShopManager {
     private void initializeShop() {
         // Blocks category
         ShopCategory blocks = new ShopCategory("Blocks");
-        blocks.addItem(new ShopItem(Material.WOOL, "Wool", 4, Material.IRON_INGOT, 1));
-        blocks.addItem(new ShopItem(Material.STAINED_CLAY, "Hardened Clay", 12, Material.IRON_INGOT, 1));
-        blocks.addItem(new ShopItem(Material.WOOD, "Wood", 4, Material.GOLD_INGOT, 1));
-        blocks.addItem(new ShopItem(Material.ENDER_STONE, "End Stone", 12, Material.IRON_INGOT, 1));
+        blocks.addItem(new ShopItem(Material.WHITE_WOOL, "Wool", 4, Material.IRON_INGOT, 1));
+        blocks.addItem(new ShopItem(Material.TERRACOTTA, "Hardened Clay", 12, Material.IRON_INGOT, 1));
+        blocks.addItem(new ShopItem(Material.OAK_PLANKS, "Wood", 4, Material.GOLD_INGOT, 1));
+        blocks.addItem(new ShopItem(Material.END_STONE, "End Stone", 12, Material.IRON_INGOT, 1));
         blocks.addItem(new ShopItem(Material.OBSIDIAN, "Obsidian", 4, Material.EMERALD, 1));
         categories.put("blocks", blocks);
 
@@ -48,11 +48,11 @@ public class ShopManager {
 
         // Tools category
         ShopCategory tools = new ShopCategory("Tools");
-        tools.addItem(new ShopItem(Material.WOOD_PICKAXE, "Wood Pickaxe", 1, Material.IRON_INGOT, 10));
+        tools.addItem(new ShopItem(Material.WOODEN_PICKAXE, "Wood Pickaxe", 1, Material.IRON_INGOT, 10));
         tools.addItem(new ShopItem(Material.STONE_PICKAXE, "Stone Pickaxe", 1, Material.IRON_INGOT, 10));
         tools.addItem(new ShopItem(Material.IRON_PICKAXE, "Iron Pickaxe", 1, Material.GOLD_INGOT, 3));
         tools.addItem(new ShopItem(Material.DIAMOND_PICKAXE, "Diamond Pickaxe", 1, Material.GOLD_INGOT, 6));
-        tools.addItem(new ShopItem(Material.WOOD_AXE, "Wood Axe", 1, Material.IRON_INGOT, 10));
+        tools.addItem(new ShopItem(Material.WOODEN_AXE, "Wood Axe", 1, Material.IRON_INGOT, 10));
         tools.addItem(new ShopItem(Material.STONE_AXE, "Stone Axe", 1, Material.IRON_INGOT, 10));
         tools.addItem(new ShopItem(Material.SHEARS, "Shears", 1, Material.IRON_INGOT, 20));
         categories.put("tools", tools);
@@ -105,10 +105,10 @@ public class ShopManager {
         Inventory inv = Bukkit.createInventory(null, 54, "Item Shop");
 
         // Add category items
-        inv.setItem(10, createCategoryItem(Material.WOOL, "§aBlocks", "blocks"));
+        inv.setItem(10, createCategoryItem(Material.WHITE_WOOL, "§aBlocks", "blocks"));
         inv.setItem(12, createCategoryItem(Material.STONE_SWORD, "§aWeapons", "weapons"));
         inv.setItem(14, createCategoryItem(Material.CHAINMAIL_CHESTPLATE, "§aArmor", "armor"));
-        inv.setItem(16, createCategoryItem(Material.WOOD_PICKAXE, "§aTools", "tools"));
+        inv.setItem(16, createCategoryItem(Material.WOODEN_PICKAXE, "§aTools", "tools"));
         inv.setItem(28, createCategoryItem(Material.GOLDEN_APPLE, "§aFood", "food"));
         inv.setItem(30, createCategoryItem(Material.TNT, "§aSpecial Items", "special"));
 

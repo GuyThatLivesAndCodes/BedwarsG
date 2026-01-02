@@ -39,8 +39,8 @@ public class BlockBreakListener implements Listener {
 
         Block block = event.getBlock();
 
-        // Check if it's a bed
-        if (block.getType() == Material.BED_BLOCK) {
+        // Check if it's a bed (any color)
+        if (block.getType().name().contains("_BED")) {
             handleBedBreak(event, player, arena, block);
         }
     }

@@ -21,7 +21,7 @@ public class InventoryClickListener implements Listener {
         }
 
         Player player = (Player) event.getWhoClicked();
-        String title = event.getInventory().getTitle();
+        String title = event.getView().getTitle();
 
         // Handle shop clicks
         if (title.contains("Shop")) {
