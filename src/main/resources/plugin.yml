@@ -1,7 +1,7 @@
 name: BedwarsG
 version: '${project.version}'
 main: com.guythatlives.bedwarsg.BedwarsG
-api-version: 1.8
+api-version: 1.13
 author: GuyThatLives
 description: Advanced Bedwars Plugin with Maps, Parties, 1v1, and Custom Games
 
