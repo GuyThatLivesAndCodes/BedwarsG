@@ -89,6 +89,13 @@ public class GUIClickListener implements Listener {
             return;
         }
 
+        // Check if player is already in a game
+        if (plugin.getArenaManager().isInArena(player)) {
+            player.closeInventory();
+            player.sendMessage(plugin.getConfigManager().getMessage("game.already-in-game"));
+            return;
+        }
+
         // Try to find and join the arena
         for (Arena arena : plugin.getArenaManager().getArenas()) {
             if (itemName.contains(arena.getName())) {
