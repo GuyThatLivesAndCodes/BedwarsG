@@ -155,6 +155,7 @@ public class BedwarsG extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new InventoryClickListener(this), this);
         getServer().getPluginManager().registerEvents(new GUIClickListener(this), this);
         getServer().getPluginManager().registerEvents(new ShopInteractListener(this), this);
+        getServer().getPluginManager().registerEvents(new BotDamageListener(this), this);
     }
 
     public static BedwarsG getInstance() {

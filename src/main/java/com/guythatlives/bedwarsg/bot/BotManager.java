@@ -295,19 +295,13 @@ public class BotManager {
                     plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is INVALID - " +
                                              "Dead: " + bot.getArmorStand().isDead());
                 } else {
-                    plugin.getLogger().info("Bot " + bot.getName() + " armor stand VERIFIED - valid: " + bot.getArmorStand().isValid() +
-                                           ", location: " + bot.getArmorStand().getLocation());
+                    plugin.getLogger().info("Bot " + bot.getName() + " armor stand VERIFIED - valid: " + bot.getArmorStand().isValid());
                 }
             }
-        }.runTaskLater(plugin, 10L);  // Check after 0.5 seconds
+        }.runTaskLater(plugin, 5L);  // Check after 0.25 seconds (reduced from 0.5s)
 
-        // Initialize the bot AI with a small delay to ensure armor stand is ready
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                bot.initialize();
-            }
-        }.runTaskLater(plugin, 5L);  // Initialize after 0.25 seconds
+        // Initialize the bot AI immediately - armor stand is ready
+        bot.initialize();
 
         plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor() +
                                " at world: " + world.getName() + " (Game world: " + arena.getGameWorldName() + ")");

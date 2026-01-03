@@ -45,9 +45,9 @@ public class BotAI {
             return;
         }
 
-        // Apply reaction time delay
+        // Reduced reaction time for faster response
         int reactionTime = plugin.getConfigManager().getInt("bots.behavior.reaction-time");
-        if (System.currentTimeMillis() - lastActionTime < reactionTime * 50) {
+        if (System.currentTimeMillis() - lastActionTime < reactionTime * 10) { // Changed from *50 to *10
             return;
         }
 
@@ -251,12 +251,24 @@ public class BotAI {
 
         // Calculate direction
         Vector direction = target.toVector().subtract(from.toVector());
+        double distance = direction.length();
+
+        // Don't move if already very close
+        if (distance < 0.5) {
+            return;
+        }
+
         direction.setY(0); // Keep on same Y level
         direction.normalize();
 
-        // Apply decision speed to movement distance
-        double speed = 0.5 * bot.getSkills().getDecisionSpeed();
+        // Faster movement speed - increased from 0.5 to 1.5 base speed
+        double speed = 1.5 * bot.getSkills().getDecisionSpeed();
         Location newLoc = from.clone().add(direction.multiply(speed));
+
+        // Make sure new location has same Y as target if close
+        if (distance < 3) {
+            newLoc.setY(target.getY());
+        }
 
         // Teleport the bot
         bot.teleport(newLoc);

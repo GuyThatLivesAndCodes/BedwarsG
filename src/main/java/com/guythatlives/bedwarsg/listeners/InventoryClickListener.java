@@ -1,10 +1,13 @@
 package com.guythatlives.bedwarsg.listeners;
 
 import com.guythatlives.bedwarsg.BedwarsG;
+import com.guythatlives.bedwarsg.shop.ShopCategory;
+import com.guythatlives.bedwarsg.shop.ShopItem;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.ItemStack;
 
 public class InventoryClickListener implements Listener {
 
@@ -27,12 +30,12 @@ public class InventoryClickListener implements Listener {
         if (title.contains("Shop")) {
             event.setCancelled(true);
 
-            if (event.getCurrentItem() == null) {
+            if (event.getCurrentItem() == null || event.getCurrentItem().getItemMeta() == null) {
                 return;
             }
 
-            // Check if it's a category or item
-            String itemName = event.getCurrentItem().getItemMeta().getDisplayName();
+            ItemStack clicked = event.getCurrentItem();
+            String itemName = clicked.getItemMeta().getDisplayName();
 
             if (title.equals("Item Shop")) {
                 // Category selection
@@ -48,6 +51,21 @@ public class InventoryClickListener implements Listener {
                     plugin.getShopManager().openShop(player, "food");
                 } else if (itemName.contains("Special")) {
                     plugin.getShopManager().openShop(player, "special");
+                }
+            } else {
+                // Item purchase - determine which category from title
+                String categoryName = title.replace(" Shop", "").toLowerCase();
+                ShopCategory category = plugin.getShopManager().getCategory(categoryName);
+
+                if (category != null) {
+                    // Find the shop item by matching material and display name
+                    for (ShopItem shopItem : category.getItems()) {
+                        if (shopItem.getMaterial() == clicked.getType() &&
+                            itemName.contains(shopItem.getDisplayName())) {
+                            plugin.getShopManager().purchaseItem(player, shopItem);
+                            break;
+                        }
+                    }
                 }
             }
         }

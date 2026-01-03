@@ -72,9 +72,9 @@ public class BotPlayer {
      * Main update loop for the bot
      */
     private void tick() {
-        // Grace period: Don't check validity for first 3 seconds (60 ticks) after spawn
+        // Reduced grace period: Don't check validity for first 1 second (20 ticks) after spawn
         // This prevents bots from immediately cleaning themselves up during world loading
-        if (ticksAlive < 60) {
+        if (ticksAlive < 20) {
             ticksAlive++;
             return;
         }
