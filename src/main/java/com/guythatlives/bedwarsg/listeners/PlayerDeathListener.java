@@ -166,13 +166,23 @@ public class PlayerDeathListener implements Listener {
             }
         }.runTaskLater(plugin, 1L);
 
-        // Check if team is eliminated
+        // Check if team is eliminated (check both real players AND bots)
         boolean hasAlivePlayers = false;
         for (java.util.UUID uuid : team.getPlayers()) {
+            // Check if it's a real player
             Player p = plugin.getServer().getPlayer(uuid);
             if (p != null && p.isOnline() && !p.equals(player)) {
                 // Check if this player is not in spectator mode (i.e., still alive)
                 if (p.getGameMode() != org.bukkit.GameMode.SPECTATOR) {
+                    hasAlivePlayers = true;
+                    break;
+                }
+            }
+
+            // Check if it's a bot
+            if (plugin.getBotManager() != null && plugin.getBotManager().isBot(uuid)) {
+                com.guythatlives.bedwarsg.bot.BotPlayer bot = plugin.getBotManager().getBot(uuid);
+                if (bot != null && bot.getArmorStand() != null && bot.getArmorStand().isValid()) {
                     hasAlivePlayers = true;
                     break;
                 }

@@ -279,7 +279,8 @@ public class BotManager {
         // Initialize the bot AI
         bot.initialize();
 
-        plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor());
+        plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor() +
+                               " at world: " + world.getName() + " (Game world: " + arena.getGameWorldName() + ")");
     }
 
     /**
