@@ -45,6 +45,9 @@ public class BotAI {
             return;
         }
 
+        // Always try to pick up nearby items
+        tryPickupNearbyItems(botLoc);
+
         // Reduced reaction time for faster response
         int reactionTime = plugin.getConfigManager().getInt("bots.behavior.reaction-time");
         if (System.currentTimeMillis() - lastActionTime < reactionTime * 10) { // Changed from *50 to *10
@@ -162,6 +165,33 @@ public class BotAI {
             Location generatorLoc = findNearestGenerator();
             if (generatorLoc != null) {
                 moveTowards(botLoc, generatorLoc);
+            }
+        }
+    }
+
+    /**
+     * Try to pick up items within pickup range
+     */
+    private void tryPickupNearbyItems(Location botLoc) {
+        if (botLoc.getWorld() == null) {
+            return;
+        }
+
+        double pickupRange = 1.5; // Same as player pickup range
+
+        for (Entity entity : botLoc.getWorld().getNearbyEntities(botLoc, pickupRange, pickupRange, pickupRange)) {
+            if (entity instanceof Item) {
+                Item item = (Item) entity;
+                ItemStack itemStack = item.getItemStack();
+
+                // Add to bot's inventory
+                bot.addToInventory(itemStack.getType(), itemStack.getAmount());
+
+                // Remove the item from the world
+                item.remove();
+
+                plugin.getLogger().info("Bot " + bot.getName() + " picked up " +
+                                       itemStack.getAmount() + "x " + itemStack.getType());
             }
         }
     }

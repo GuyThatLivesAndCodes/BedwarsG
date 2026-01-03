@@ -3,11 +3,14 @@ package com.guythatlives.bedwarsg.bot;
 import com.guythatlives.bedwarsg.BedwarsG;
 import com.guythatlives.bedwarsg.arena.Arena;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -36,6 +39,9 @@ public class BotPlayer {
     private Location targetLocation;
     private Player targetEnemy;
 
+    // Virtual inventory for bot resources
+    private Map<Material, Integer> inventory;
+
     public BotPlayer(BedwarsG plugin, String name, BotDifficulty difficulty,
                      BotSkills skills, Arena arena) {
         this.plugin = plugin;
@@ -49,6 +55,7 @@ public class BotPlayer {
         this.ticksAlive = 0;
         this.isGathering = true;
         this.isInCombat = false;
+        this.inventory = new HashMap<>();
     }
 
     /**
@@ -167,6 +174,46 @@ public class BotPlayer {
             armorStand.remove();
             armorStand = null;
         }
+    }
+
+    /**
+     * Add an item to the bot's virtual inventory
+     */
+    public void addToInventory(Material material, int amount) {
+        inventory.put(material, inventory.getOrDefault(material, 0) + amount);
+    }
+
+    /**
+     * Remove an item from the bot's virtual inventory
+     */
+    public boolean removeFromInventory(Material material, int amount) {
+        int current = inventory.getOrDefault(material, 0);
+        if (current >= amount) {
+            inventory.put(material, current - amount);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Get the amount of a material in the bot's inventory
+     */
+    public int getInventoryAmount(Material material) {
+        return inventory.getOrDefault(material, 0);
+    }
+
+    /**
+     * Check if the bot has at least the specified amount of a material
+     */
+    public boolean hasInInventory(Material material, int amount) {
+        return inventory.getOrDefault(material, 0) >= amount;
+    }
+
+    /**
+     * Get the bot's entire inventory
+     */
+    public Map<Material, Integer> getInventory() {
+        return new HashMap<>(inventory);
     }
 
     // Getters
