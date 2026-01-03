@@ -233,6 +233,9 @@ public class BotManager {
             return;
         }
 
+        plugin.getLogger().info("Bot " + bot.getName() + " spawning for team " + team.getColor() +
+                               " at original coords: " + spawnLoc);
+
         // Get the game world
         World world;
         if (arena.getGameWorldName() != null) {
@@ -247,6 +250,13 @@ public class BotManager {
                     spawnLoc.getYaw(),
                     spawnLoc.getPitch()
                 );
+
+                // Force chunk loading to prevent invalid entities
+                if (!world.isChunkLoaded(spawnLoc.getBlockX() >> 4, spawnLoc.getBlockZ() >> 4)) {
+                    plugin.getLogger().info("Loading chunk for bot " + bot.getName() + " at chunk (" +
+                                           (spawnLoc.getBlockX() >> 4) + ", " + (spawnLoc.getBlockZ() >> 4) + ")");
+                    world.loadChunk(spawnLoc.getBlockX() >> 4, spawnLoc.getBlockZ() >> 4);
+                }
             }
         } else {
             world = spawnLoc.getWorld();
