@@ -165,6 +165,11 @@ public class GameManager {
         plugin.getGeneratorManager().stopGenerators(arena);
         plugin.getShopNPCManager().removeShops(arena);
 
+        // Remove all bots from the arena
+        if (plugin.getBotManager() != null) {
+            plugin.getBotManager().removeBotsFromArena(arena);
+        }
+
         // Clear player-placed blocks tracking
         arena.getPlayerPlacedBlocks().clear();
 

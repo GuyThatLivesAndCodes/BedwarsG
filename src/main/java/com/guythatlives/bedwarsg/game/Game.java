@@ -58,10 +58,20 @@ public class Game {
             if (!team.isEliminated()) {
                 boolean hasAlivePlayers = false;
                 for (UUID uuid : team.getPlayers()) {
+                    // Check if it's a real player
                     Player player = plugin.getServer().getPlayer(uuid);
                     if (player != null && player.isOnline()) {
                         hasAlivePlayers = true;
                         break;
+                    }
+
+                    // Check if it's a bot
+                    if (plugin.getBotManager() != null && plugin.getBotManager().isBot(uuid)) {
+                        com.guythatlives.bedwarsg.bot.BotPlayer bot = plugin.getBotManager().getBot(uuid);
+                        if (bot != null && bot.getArmorStand() != null && bot.getArmorStand().isValid()) {
+                            hasAlivePlayers = true;
+                            break;
+                        }
                     }
                 }
 
