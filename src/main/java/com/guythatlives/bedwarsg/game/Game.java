@@ -27,14 +27,15 @@ public class Game {
             playerData.put(player.getUniqueId(), new PlayerData(player));
         }
 
-        // Start game loop
+        // Start game loop with 1 second delay to allow bots to fully initialize
+        // This prevents win condition checks from running before bots are ready
         gameTask = new BukkitRunnable() {
             @Override
             public void run() {
                 tick();
             }
         };
-        gameTask.runTaskTimer(plugin, 0L, 20L);
+        gameTask.runTaskTimer(plugin, 20L, 20L);
     }
 
     private void tick() {

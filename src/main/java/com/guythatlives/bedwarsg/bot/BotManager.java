@@ -276,6 +276,16 @@ public class BotManager {
         // Link armor stand to bot
         bot.setArmorStand(armorStand);
 
+        // Verify the armor stand was set correctly
+        if (bot.getArmorStand() == null) {
+            plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is NULL immediately after setArmorStand()!");
+        } else if (!bot.getArmorStand().isValid()) {
+            plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is INVALID immediately after spawn!");
+        } else {
+            plugin.getLogger().info("Bot " + bot.getName() + " armor stand SET SUCCESSFULLY - valid: " + bot.getArmorStand().isValid() +
+                                   ", location: " + bot.getArmorStand().getLocation());
+        }
+
         // Initialize the bot AI
         bot.initialize();
 
