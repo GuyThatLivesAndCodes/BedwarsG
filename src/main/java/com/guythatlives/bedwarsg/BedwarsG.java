@@ -38,6 +38,7 @@ public class BedwarsG extends JavaPlugin {
     private PlayerGUI playerGUI;
     private AdminGUI adminGUI;
     private BotManager botManager;
+    private VoidDeathTask voidDeathTask;
 
     @Override
     public void onEnable() {
@@ -74,7 +75,8 @@ public class BedwarsG extends JavaPlugin {
         mapVisualizer.startVisualization();
 
         // Start void death checker (checks every 5 ticks = 0.25 seconds)
-        new VoidDeathTask(this).runTaskTimer(this, 0L, 5L);
+        voidDeathTask = new VoidDeathTask(this);
+        voidDeathTask.runTaskTimer(this, 0L, 5L);
 
         // Start bot auto-fill checker (checks every 60 ticks = 3 seconds)
         new BukkitRunnable() {
@@ -213,5 +215,9 @@ public class BedwarsG extends JavaPlugin {
 
     public BotManager getBotManager() {
         return botManager;
+    }
+
+    public VoidDeathTask getVoidDeathTask() {
+        return voidDeathTask;
     }
 }

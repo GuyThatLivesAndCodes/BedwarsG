@@ -119,6 +119,11 @@ public class PlayerDeathListener implements Listener {
                             player.spigot().respawn();
                             player.teleport(gameSpawn);
                             player.setGameMode(org.bukkit.GameMode.SURVIVAL);
+
+                            // Grant respawn protection to prevent void death loop
+                            if (plugin.getVoidDeathTask() != null) {
+                                plugin.getVoidDeathTask().grantRespawnProtection(player);
+                            }
                         }
                     }
                     cancel();

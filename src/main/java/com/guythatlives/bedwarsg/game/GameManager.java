@@ -118,6 +118,11 @@ public class GameManager {
                         originalSpawn.getPitch()
                     );
                     player.teleport(gameSpawn);
+
+                    // Grant respawn protection to prevent void death loop
+                    if (plugin.getVoidDeathTask() != null) {
+                        plugin.getVoidDeathTask().grantRespawnProtection(player);
+                    }
                 }
             }
         }

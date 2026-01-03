@@ -20,6 +20,9 @@ settings:
   # Game countdown time (seconds)
   countdown-time: 10
 
+  # Void death Y level (players below this Y level instantly die)
+  void-death-y: -64
+
   # Auto-start when all players ready
   auto-start: true
 
