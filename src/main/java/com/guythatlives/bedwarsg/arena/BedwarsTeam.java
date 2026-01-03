@@ -26,8 +26,16 @@ public class BedwarsTeam {
         players.add(player.getUniqueId());
     }
 
+    public void addPlayer(UUID playerUUID) {
+        players.add(playerUUID);
+    }
+
     public void removePlayer(Player player) {
         players.remove(player.getUniqueId());
+    }
+
+    public void removePlayer(UUID playerUUID) {
+        players.remove(playerUUID);
     }
 
     public String getColor() {

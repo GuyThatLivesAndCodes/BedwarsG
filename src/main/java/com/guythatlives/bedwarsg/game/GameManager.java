@@ -87,10 +87,15 @@ public class GameManager {
         Game game = createGame(arena);
         game.start();
 
-        // Start generators and spawn shops in the game world
+        // Start generators, spawn shops, and spawn bots in the game world
         if (gameWorld != null) {
             plugin.getGeneratorManager().startGenerators(arena, gameWorld);
             plugin.getShopNPCManager().spawnShops(arena, gameWorld);
+
+            // Spawn bot armor stands now that game world exists
+            if (plugin.getBotManager() != null) {
+                plugin.getBotManager().spawnBotsInGame(arena);
+            }
         }
 
         String message = plugin.getConfigManager().getMessage("game.started");

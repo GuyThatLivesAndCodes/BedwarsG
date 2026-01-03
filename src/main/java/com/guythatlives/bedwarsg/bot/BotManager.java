@@ -123,7 +123,8 @@ public class BotManager {
     }
 
     /**
-     * Add specified number of bots to an arena
+     * Add specified number of bots to an arena (virtual, for lobby counting)
+     * Armor stands are spawned later when the game actually starts
      */
     public void addBotsToArena(Arena arena, int count) {
         if (!enabled || count <= 0) {
@@ -133,16 +134,64 @@ public class BotManager {
         for (int i = 0; i < count; i++) {
             BotPlayer bot = createBot(arena);
             if (bot != null) {
-                spawnBot(bot, arena);
+                registerBot(bot, arena);
             }
         }
 
-        plugin.getLogger().info("Added " + count + " bots to arena: " + arena.getName());
+        plugin.getLogger().info("Added " + count + " virtual bots to arena: " + arena.getName());
 
         // Check if game can start now
         if (arena.canStart() && arena.getState() == com.guythatlives.bedwarsg.arena.ArenaState.WAITING) {
             plugin.getGameManager().startGame(arena);
         }
+    }
+
+    /**
+     * Register a bot to the arena (virtual tracking only, no armor stand yet)
+     */
+    private void registerBot(BotPlayer bot, Arena arena) {
+        // Get spawn location for bot's team
+        BedwarsTeam team = assignBotToTeam(arena);
+        if (team == null) {
+            plugin.getLogger().warning("Could not assign bot to team in arena: " + arena.getName());
+            return;
+        }
+
+        // Add bot UUID to team
+        team.addPlayer(bot.getUUID());
+
+        // Add to active bots (but don't spawn armor stand yet)
+        activeBots.put(bot.getUUID(), bot);
+
+        // Add bot to arena tracking
+        arena.addBot(bot.getUUID(), team);
+
+        plugin.getLogger().info("Bot " + bot.getName() + " registered to team " + team.getColor());
+    }
+
+    /**
+     * Spawn all registered bots as armor stands when the game starts
+     */
+    public void spawnBotsInGame(Arena arena) {
+        if (!enabled) {
+            return;
+        }
+
+        List<UUID> botsInArena = new ArrayList<>();
+        for (BotPlayer bot : activeBots.values()) {
+            if (bot.getArena().equals(arena)) {
+                botsInArena.add(bot.getUUID());
+            }
+        }
+
+        for (UUID botUUID : botsInArena) {
+            BotPlayer bot = activeBots.get(botUUID);
+            if (bot != null) {
+                spawnBotArmorStand(bot, arena);
+            }
+        }
+
+        plugin.getLogger().info("Spawned " + botsInArena.size() + " bot armor stands in game world for arena: " + arena.getName());
     }
 
     /**
@@ -160,13 +209,20 @@ public class BotManager {
     }
 
     /**
-     * Spawn a bot in the arena as an armor stand
+     * Spawn a bot's armor stand in the game world
      */
-    private void spawnBot(BotPlayer bot, Arena arena) {
-        // Get spawn location for bot's team
-        BedwarsTeam team = assignBotToTeam(arena);
+    private void spawnBotArmorStand(BotPlayer bot, Arena arena) {
+        // Get the team this bot was assigned to
+        BedwarsTeam team = null;
+        for (BedwarsTeam t : arena.getTeams().values()) {
+            if (t.getPlayers().contains(bot.getUUID())) {
+                team = t;
+                break;
+            }
+        }
+
         if (team == null) {
-            plugin.getLogger().warning("Could not assign bot to team in arena: " + arena.getName());
+            plugin.getLogger().warning("Bot " + bot.getName() + " has no team assignment!");
             return;
         }
 
@@ -222,12 +278,6 @@ public class BotManager {
 
         // Initialize the bot AI
         bot.initialize();
-
-        // Add to active bots
-        activeBots.put(bot.getUUID(), bot);
-
-        // Add bot to arena tracking
-        arena.addBot(bot.getUUID(), team);
 
         plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor());
     }
