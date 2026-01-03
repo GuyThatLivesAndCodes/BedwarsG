@@ -43,12 +43,30 @@ public class Arena {
 
     private void initializeTeams() {
         List<String> teamColors = plugin.getConfigManager().getConfig().getStringList("teams");
-        int teamsNeeded = getTeamsCount();
 
-        for (int i = 0; i < Math.min(teamsNeeded, teamColors.size()); i++) {
-            String color = teamColors.get(i);
-            BedwarsTeam team = new BedwarsTeam(color, getPlayersPerTeam());
-            teams.put(color, team);
+        // Auto-detect teams from map spawn points instead of using hardcoded counts
+        int configuredTeams = 0;
+        for (String color : teamColors) {
+            // Check if this team has a spawn point configured in the map
+            if (map.getSpawn(color) != null) {
+                BedwarsTeam team = new BedwarsTeam(color, getPlayersPerTeam());
+                teams.put(color, team);
+                configuredTeams++;
+                plugin.getLogger().info("Arena " + name + ": Initialized team " + color + " (has spawn point)");
+            }
+        }
+
+        plugin.getLogger().info("Arena " + name + ": Auto-detected " + configuredTeams + " teams from map configuration");
+
+        // Fallback: if no teams were configured, use the old method
+        if (configuredTeams == 0) {
+            plugin.getLogger().warning("Arena " + name + ": No spawn points found! Falling back to default team initialization");
+            int teamsNeeded = getTeamsCount();
+            for (int i = 0; i < Math.min(teamsNeeded, teamColors.size()); i++) {
+                String color = teamColors.get(i);
+                BedwarsTeam team = new BedwarsTeam(color, getPlayersPerTeam());
+                teams.put(color, team);
+            }
         }
     }
 

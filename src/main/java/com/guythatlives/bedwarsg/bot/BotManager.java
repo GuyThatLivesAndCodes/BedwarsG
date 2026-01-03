@@ -387,23 +387,43 @@ public class BotManager {
     /**
      * Assign a bot to a team (prefers teams with fewer players)
      * Only assigns to teams that have spawn points configured
+     * Respects team size limits
      */
     private BedwarsTeam assignBotToTeam(Arena arena) {
         BedwarsTeam smallestTeam = null;
         int smallestSize = Integer.MAX_VALUE;
 
+        plugin.getLogger().info("[Bot Assignment] Looking for team for bot in arena " + arena.getName());
+
         for (BedwarsTeam team : arena.getTeams().values()) {
             // Only consider teams that have spawn points configured
             Location spawnLoc = arena.getMap().getSpawn(team.getColor());
             if (spawnLoc == null) {
+                plugin.getLogger().info("[Bot Assignment] Team " + team.getColor() + " - NO SPAWN POINT, skipping");
                 continue; // Skip teams without spawn points
             }
 
             int teamSize = team.getPlayers().size();
+            int maxSize = team.getMaxSize();
+
+            plugin.getLogger().info("[Bot Assignment] Team " + team.getColor() + " - size: " + teamSize + "/" + maxSize);
+
+            // Skip if team is already full
+            if (teamSize >= maxSize) {
+                plugin.getLogger().info("[Bot Assignment] Team " + team.getColor() + " - FULL, skipping");
+                continue;
+            }
+
             if (teamSize < smallestSize) {
                 smallestSize = teamSize;
                 smallestTeam = team;
             }
+        }
+
+        if (smallestTeam != null) {
+            plugin.getLogger().info("[Bot Assignment] Assigned to team " + smallestTeam.getColor() + " (size: " + smallestSize + ")");
+        } else {
+            plugin.getLogger().warning("[Bot Assignment] Could not find any team with available space!");
         }
 
         return smallestTeam;
