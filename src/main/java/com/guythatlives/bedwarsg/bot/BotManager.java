@@ -283,8 +283,7 @@ public class BotManager {
                     plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is NULL after spawn!");
                 } else if (!bot.getArmorStand().isValid()) {
                     plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is INVALID - " +
-                                             "Dead: " + bot.getArmorStand().isDead() +
-                                             ", Removed: " + !bot.getArmorStand().isInWorld());
+                                             "Dead: " + bot.getArmorStand().isDead());
                 } else {
                     plugin.getLogger().info("Bot " + bot.getName() + " armor stand VERIFIED - valid: " + bot.getArmorStand().isValid() +
                                            ", location: " + bot.getArmorStand().getLocation());
