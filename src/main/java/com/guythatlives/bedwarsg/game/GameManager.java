@@ -84,8 +84,8 @@ public class GameManager {
 
         org.bukkit.World gameWorld = Bukkit.getWorld(worldName);
 
+        // Create game instance (but don't start the game loop yet)
         Game game = createGame(arena);
-        game.start();
 
         // Start generators, spawn shops, and spawn bots in the game world
         if (gameWorld != null) {
@@ -126,6 +126,9 @@ public class GameManager {
                 }
             }
         }
+
+        // Start the game loop AFTER everything is set up (players, bots, generators)
+        game.start();
     }
 
     public void endGame(Arena arena, BedwarsTeam winner) {
