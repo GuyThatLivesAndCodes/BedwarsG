@@ -58,48 +58,33 @@ public class Game {
         for (BedwarsTeam team : arena.getTeams().values()) {
             if (!team.isEliminated()) {
                 boolean hasAlivePlayers = false;
-                int realPlayersChecked = 0;
-                int botsChecked = 0;
 
                 for (UUID uuid : team.getPlayers()) {
                     // Check if it's a real player
                     Player player = plugin.getServer().getPlayer(uuid);
                     if (player != null && player.isOnline()) {
                         hasAlivePlayers = true;
-                        realPlayersChecked++;
                         break;
                     }
 
                     // Check if it's a bot
                     if (plugin.getBotManager() != null && plugin.getBotManager().isBot(uuid)) {
                         com.guythatlives.bedwarsg.bot.BotPlayer bot = plugin.getBotManager().getBot(uuid);
-                        botsChecked++;
                         if (bot != null && bot.getArmorStand() != null && bot.getArmorStand().isValid()) {
                             hasAlivePlayers = true;
-                            plugin.getLogger().info("[Win Check] Team " + team.getColor() + " has alive bot: " + bot.getName() +
-                                                   " in world: " + bot.getArmorStand().getWorld().getName());
                             break;
-                        } else {
-                            plugin.getLogger().warning("[Win Check] Team " + team.getColor() + " bot check failed - " +
-                                                      "bot=" + (bot != null) + ", stand=" + (bot != null && bot.getArmorStand() != null) +
-                                                      ", valid=" + (bot != null && bot.getArmorStand() != null && bot.getArmorStand().isValid()));
                         }
                     }
                 }
-
-                plugin.getLogger().info("[Win Check] Team " + team.getColor() + " - Players: " + realPlayersChecked +
-                                       ", Bots checked: " + botsChecked + ", Has alive: " + hasAlivePlayers);
 
                 if (hasAlivePlayers) {
                     aliveTeams.add(team);
                 } else {
                     team.setEliminated(true);
-                    plugin.getLogger().info("[Win Check] Team " + team.getColor() + " eliminated!");
                 }
             }
         }
 
-        plugin.getLogger().info("[Win Check] Alive teams: " + aliveTeams.size());
         return aliveTeams.size() == 1 ? aliveTeams.get(0) : null;
     }
 

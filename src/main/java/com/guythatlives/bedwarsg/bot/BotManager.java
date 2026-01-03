@@ -8,6 +8,7 @@ import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -259,16 +260,14 @@ public class BotManager {
         // Spawn armor stand
         ArmorStand armorStand = (ArmorStand) world.spawnEntity(spawnLoc, EntityType.ARMOR_STAND);
 
-        // Configure armor stand to look like a player
+        // Configure armor stand - simplified for compatibility
         armorStand.setCustomName(ChatColor.YELLOW + bot.getName());
         armorStand.setCustomNameVisible(true);
         armorStand.setGravity(true);
         armorStand.setVisible(true);
-        armorStand.setBasePlate(false);
+        armorStand.setBasePlate(true);  // Changed from false - basePlate issues in newer versions
         armorStand.setArms(true);
         armorStand.setSmall(false);
-        armorStand.setMarker(false); // Not a marker, can be interacted with
-        armorStand.setInvulnerable(false); // Can be damaged
 
         // Add equipment to make it look like a player
         equipBot(armorStand, team);
@@ -276,18 +275,30 @@ public class BotManager {
         // Link armor stand to bot
         bot.setArmorStand(armorStand);
 
-        // Verify the armor stand was set correctly
-        if (bot.getArmorStand() == null) {
-            plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is NULL immediately after setArmorStand()!");
-        } else if (!bot.getArmorStand().isValid()) {
-            plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is INVALID immediately after spawn!");
-        } else {
-            plugin.getLogger().info("Bot " + bot.getName() + " armor stand SET SUCCESSFULLY - valid: " + bot.getArmorStand().isValid() +
-                                   ", location: " + bot.getArmorStand().getLocation());
-        }
+        // Verify the armor stand was set correctly (with small delay for world loading)
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (bot.getArmorStand() == null) {
+                    plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is NULL after spawn!");
+                } else if (!bot.getArmorStand().isValid()) {
+                    plugin.getLogger().severe("CRITICAL: Bot " + bot.getName() + " armor stand is INVALID - " +
+                                             "Dead: " + bot.getArmorStand().isDead() +
+                                             ", Removed: " + !bot.getArmorStand().isInWorld());
+                } else {
+                    plugin.getLogger().info("Bot " + bot.getName() + " armor stand VERIFIED - valid: " + bot.getArmorStand().isValid() +
+                                           ", location: " + bot.getArmorStand().getLocation());
+                }
+            }
+        }.runTaskLater(plugin, 10L);  // Check after 0.5 seconds
 
-        // Initialize the bot AI
-        bot.initialize();
+        // Initialize the bot AI with a small delay to ensure armor stand is ready
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                bot.initialize();
+            }
+        }.runTaskLater(plugin, 5L);  // Initialize after 0.25 seconds
 
         plugin.getLogger().info("Bot " + bot.getName() + " spawned as armor stand in team " + team.getColor() +
                                " at world: " + world.getName() + " (Game world: " + arena.getGameWorldName() + ")");
