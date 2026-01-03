@@ -4,12 +4,17 @@ import com.guythatlives.bedwarsg.BedwarsG;
 import com.guythatlives.bedwarsg.arena.Arena;
 import com.guythatlives.bedwarsg.arena.ArenaState;
 import com.guythatlives.bedwarsg.bot.BotPlayer;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.inventory.ItemStack;
+
+import java.util.Map;
 
 public class BotDamageListener implements Listener {
 
@@ -56,8 +61,18 @@ public class BotDamageListener implements Listener {
             return; // Not a bot armor stand
         }
 
-        // Kill the bot (remove armor stand)
+        // Kill the bot
         plugin.getLogger().info("Bot " + bot.getName() + " was killed by " + attacker.getName());
+
+        // Drop bot's inventory items at death location
+        dropBotInventory(bot, armorStand.getLocation());
+
+        // Broadcast death message to arena players
+        String deathMessage = plugin.getConfigManager().getPrefix() +
+                             "§c" + bot.getName() + " §7was killed by §c" + attacker.getName();
+        for (Player p : arena.getPlayers()) {
+            p.sendMessage(deathMessage);
+        }
 
         // Remove the bot
         plugin.getBotManager().removeBot(bot.getUUID());
@@ -69,5 +84,42 @@ public class BotDamageListener implements Listener {
 
         // Cancel the event to prevent default armor stand damage behavior
         event.setCancelled(true);
+    }
+
+    /**
+     * Drop all items from the bot's inventory at the death location
+     */
+    private void dropBotInventory(BotPlayer bot, Location deathLocation) {
+        Map<Material, Integer> inventory = bot.getInventory();
+
+        if (inventory.isEmpty()) {
+            return;
+        }
+
+        // Drop each item type
+        for (Map.Entry<Material, Integer> entry : inventory.entrySet()) {
+            Material material = entry.getKey();
+            int amount = entry.getValue();
+
+            if (amount <= 0) {
+                continue;
+            }
+
+            // Create item stacks (split into max stack sizes if necessary)
+            int maxStackSize = material.getMaxStackSize();
+            while (amount > 0) {
+                int stackAmount = Math.min(amount, maxStackSize);
+                ItemStack itemStack = new ItemStack(material, stackAmount);
+
+                // Drop the item at the death location
+                if (deathLocation.getWorld() != null) {
+                    deathLocation.getWorld().dropItemNaturally(deathLocation, itemStack);
+                }
+
+                amount -= stackAmount;
+            }
+        }
+
+        plugin.getLogger().info("Dropped " + inventory.size() + " item types from bot " + bot.getName());
     }
 }
