@@ -5,6 +5,8 @@ import com.guythatlives.bedwarsg.arena.Arena;
 import com.guythatlives.bedwarsg.arena.BedwarsTeam;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -27,6 +29,7 @@ public class BotAI {
 
     private long lastActionTime;
     private long gatherStartTime;
+    private long lastAttackTime;
 
     public BotAI(BotPlayer bot, BedwarsG plugin) {
         this.bot = bot;
@@ -34,6 +37,7 @@ public class BotAI {
         this.random = new Random();
         this.lastActionTime = System.currentTimeMillis();
         this.gatherStartTime = System.currentTimeMillis();
+        this.lastAttackTime = 0;
     }
 
     /**
@@ -88,8 +92,16 @@ public class BotAI {
         if (nearestEnemy != null) {
             bot.setInCombat(true);
             bot.setTargetEnemy(nearestEnemy);
-            // Move towards enemy (armor stands can't fight, but they can follow)
-            moveTowards(botLoc, nearestEnemy.getLocation());
+
+            double distance = botLoc.distance(nearestEnemy.getLocation());
+
+            // Attack if close enough
+            if (distance <= 3.5) {
+                attackPlayer(nearestEnemy);
+            } else {
+                // Move towards enemy
+                moveTowards(botLoc, nearestEnemy.getLocation());
+            }
             return true;
         }
 
@@ -236,7 +248,14 @@ public class BotAI {
         Player target = findNearestEnemy(botLoc, combatRange);
 
         if (target != null) {
-            moveTowards(botLoc, target.getLocation());
+            double distance = botLoc.distance(target.getLocation());
+
+            // Attack if close enough
+            if (distance <= 3.5) {
+                attackPlayer(target);
+            } else {
+                moveTowards(botLoc, target.getLocation());
+            }
         } else {
             // Wander towards center
             if (bot.getArena().getGameWorldName() != null) {
@@ -246,6 +265,66 @@ public class BotAI {
                 }
             }
         }
+    }
+
+    /**
+     * Attack a player
+     */
+    private void attackPlayer(Player target) {
+        // Check attack cooldown based on bot difficulty
+        long attackCooldown;
+        switch (bot.getDifficulty()) {
+            case EASY:
+                attackCooldown = 1000; // 1 second
+                break;
+            case MEDIUM:
+                attackCooldown = 750; // 0.75 seconds
+                break;
+            case HARD:
+                attackCooldown = 500; // 0.5 seconds
+                break;
+            default:
+                attackCooldown = 750;
+        }
+
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastAttackTime < attackCooldown) {
+            return; // Still on cooldown
+        }
+
+        lastAttackTime = currentTime;
+
+        // Calculate damage based on bot's inventory (better weapons = more damage)
+        double damage = 2.0; // Base damage (1 heart)
+
+        // Check if bot has better weapons
+        if (bot.hasInInventory(Material.DIAMOND_SWORD, 1)) {
+            damage = 7.0; // Diamond sword damage
+        } else if (bot.hasInInventory(Material.IRON_SWORD, 1)) {
+            damage = 6.0; // Iron sword damage
+        } else if (bot.hasInInventory(Material.STONE_SWORD, 1)) {
+            damage = 5.0; // Stone sword damage
+        } else if (bot.hasInInventory(Material.WOODEN_SWORD, 1)) {
+            damage = 4.0; // Wood sword damage
+        }
+
+        // Apply difficulty modifier
+        damage *= bot.getSkills().getDecisionSpeed(); // Use decision speed as damage multiplier
+
+        // Damage the player
+        target.damage(damage);
+
+        // Visual and sound effects
+        Location targetLoc = target.getLocation();
+        if (targetLoc.getWorld() != null) {
+            // Play attack sound
+            targetLoc.getWorld().playSound(targetLoc, Sound.ENTITY_PLAYER_ATTACK_STRONG, 1.0f, 1.0f);
+
+            // Spawn particles
+            targetLoc.getWorld().spawnParticle(Particle.CRIT, targetLoc.clone().add(0, 1, 0), 5, 0.3, 0.3, 0.3, 0.1);
+        }
+
+        plugin.getLogger().info("Bot " + bot.getName() + " attacked " + target.getName() + " for " + damage + " damage");
     }
 
     /**
